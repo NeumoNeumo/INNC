@@ -1,3 +1,7 @@
+/.cache/
+/build/
+/subprojects/*
+!/subprojects/gtest.wrap
 # Prerequisites
 *.d
 
