@@ -9,6 +9,8 @@ gtest_proj = subproject('gtest')
 gtest_dep = gtest_proj.get_variable('gtest_main_dep')
 gmock_dep = gtest_proj.get_variable('gmock_dep')
 
+subdir('docs')
+
 e = executable('unittest', 
   'test/test.cpp', 
   include_directories: incdir,
