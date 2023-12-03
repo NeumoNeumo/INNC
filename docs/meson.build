@@ -16,24 +16,22 @@ conf_data.set('DOXYGEN_INPUT_DIR', doxygen_input_dir)
 conf_data.set('DOXYGEN_OUTPUT_DIR', doxygen_output_dir)
 conf_data.set('VERSION', meson.project_version())
 
-configure_file(
+doxyfile = configure_file(
   input: doxyfile_in,
   output: doxyfile_out,
   configuration: conf_data
 )
 
 # Doxygen custom target
-# TODO fix warning
 doxygen_target = custom_target(
   'Doxygen',
-  input: doxyfile_out_path,
+  input: doxyfile,
   output: doxygen_generated,
-  command: [doxygen_cmd, doxyfile_out_path],
+  command: [doxygen_cmd, doxyfile],
   install: false,
 )
 
 ## Sphinx configuration
-# TODO fix warning
 sphinx_source = meson.current_source_dir()
 sphinx_build = meson.current_build_dir() / 'sphinx'
 
