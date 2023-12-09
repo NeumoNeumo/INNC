@@ -29,7 +29,7 @@ pipx install sphinx-rtd-theme
 ## Development
 
 1. build system: [meson](https://github.com/mesonbuild/meson)
-2. cpp standard: c++17
+2. cpp standard: c++20
 3. format: default [clang-format](https://clang.llvm.org/docs/ClangFormat.html)
 4. documentation generator: [sphinx](https://www.sphinx-doc.org)
 5. test framework: [googletest](https://github.com/google/googletest)
