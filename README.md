@@ -1,5 +1,5 @@
-# libtensor
-A tensor library.
+#  INNC
+INNC Is Neural Networks in CPP.
 
 ## Test from source
 
