@@ -34,6 +34,15 @@ pipx install sphinx-rtd-theme
 4. documentation generator: [sphinx](https://www.sphinx-doc.org)
 5. test framework: [googletest](https://github.com/google/googletest)
 
+You may also simply run
+```bash
+conda env create -f environment.yml
+```
+or
+```bash
+mamba env create -f environment.yml
+```
+
 <!-- How to combile googletest with meson? Check this post:
 https://stackoverflow.com/questions/57473395/how-to-set-up-googletest-wtih-meson
 -->
