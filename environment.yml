@@ -6,6 +6,7 @@ dependencies:
 - breathe
 - meson
 - ninja
+- pybind11
 environment: {}
 name: INNC
 

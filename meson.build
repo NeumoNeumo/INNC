@@ -11,8 +11,16 @@ gmock_dep = gtest_proj.get_variable('gmock_dep')
 
 subdir('docs')
 
+libINNC = library('INNC',
+  'src/INNC/storage.cpp',
+  'src/INNC/tensor.cpp',
+  'src/INNC/types.cpp',
+  include_directories: incdir,
+)
+
 e = executable('unittest', 
   'test/test.cpp', 
+  link_with: [libINNC, ],
   include_directories: incdir,
   dependencies: [
     gtest_dep,
