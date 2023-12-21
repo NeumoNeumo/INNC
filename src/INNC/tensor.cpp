@@ -159,7 +159,7 @@ generate_binary_op_list(tensor_div);
 generate_binary_op_list(tensor_fill);
 generate_binary_op_list(tensor_to_type);
 
-std::unique_ptr<TensorFrame> TensorFrame::ones(const std::vector<size_t> &sizes,
+std::unique_ptr<TensorFrame> TensorFrame::ones(const SizeVec &sizes,
                                                types dtype) {
   auto ret = make_tf(dtype, sizes);
   uint8_t i8_one = 1;
@@ -169,7 +169,7 @@ std::unique_ptr<TensorFrame> TensorFrame::ones(const std::vector<size_t> &sizes,
 }
 
 std::unique_ptr<TensorFrame>
-TensorFrame::zeros(const std::vector<size_t> &sizes, types dtype) {
+TensorFrame::zeros(const SizeVec &sizes, types dtype) {
   auto ret = make_tf(dtype, sizes);
   auto start = ret->data_.get();
   std::fill(start, start + ret->data_.get_size(), 0);
@@ -318,11 +318,11 @@ const SizeVec Tensor::size() const { return fptr->sizes; }
 
 const SizeVec Tensor::stride() const { return fptr->strides; }
 
-Tensor Tensor::zeros(const std::vector<size_t> &size, types t) {
+Tensor Tensor::zeros(const SizeVec &size, types t) {
   return Tensor(TensorFrame::zeros(size, t));
 }
 
-Tensor Tensor::ones(const std::vector<size_t> &size, types t) {
+Tensor Tensor::ones(const SizeVec &size, types t) {
   return Tensor(TensorFrame::ones(size, t));
 }
 

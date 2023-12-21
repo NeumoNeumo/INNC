@@ -35,10 +35,8 @@ public:
   std::string to_string() const;
   static std::unique_ptr<TensorFrame> make_tf(types dtype,
                                               const SizeVec &sizes);
-  static std::unique_ptr<TensorFrame> zeros(const std::vector<size_t> &sizes,
-                                            types dtype);
-  static std::unique_ptr<TensorFrame> ones(const std::vector<size_t> &sizes,
-                                           types dtype);
+  static std::unique_ptr<TensorFrame> zeros(const SizeVec &sizes, types dtype);
+  static std::unique_ptr<TensorFrame> ones(const SizeVec &sizes, types dtype);
   static std::unique_ptr<TensorFrame> zeros_like(const TensorFrame &t);
   static std::unique_ptr<TensorFrame> ones_like(const TensorFrame &t);
   size_t numel() const noexcept;
@@ -74,8 +72,8 @@ public:
   std::string to_string() const;
   const SizeVec size() const;
   const SizeVec stride() const;
-  static Tensor zeros(const std::vector<size_t> &size, types t);
-  static Tensor ones(const std::vector<size_t> &size, types t);
+  static Tensor zeros(const SizeVec &size, types t);
+  static Tensor ones(const SizeVec &size, types t);
   static Tensor zeros_like(const Tensor &t);
   static Tensor ones_like(const Tensor &t);
   size_t numel() const noexcept;

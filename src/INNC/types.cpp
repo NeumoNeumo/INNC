@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <vector>
 
 namespace INNC {
 std::string innc_type_to_string(void *ptr, types t) {
@@ -44,7 +45,6 @@ std::string SizeVec::to_string() const noexcept {
 SizeVec::SizeVec() = default;
 SizeVec::SizeVec(const std::initializer_list<size_t> &init_list)
     : std::vector<size_t>{init_list} {}
-SizeVec::SizeVec(const std::vector<size_t> &vec) : std::vector<size_t>{vec} {}
-SizeVec::SizeVec(std::vector<size_t> &&vec)
-    : std::vector<size_t>{std::move(vec)} {}
+SizeVec::SizeVec(is_vec_i auto vec)
+    : std::vector<size_t>(std::forward<decltype(vec)>(vec)) {}
 } // namespace INNC
