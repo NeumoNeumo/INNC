@@ -12,6 +12,9 @@ inline types common_type(types a, types b) { return a >= b ? a : b; }
 constexpr unsigned char size_of(types t) { return size_of_data_[t]; }
 std::string innc_type_to_string(void *ptr, types t);
 
+// TODO rvalue optimization
+template <typename T>
+concept is_vec_i = std::is_same_v<std::remove_cvref_t<T>, std::vector<int>>;
 class SizeVec : public std::vector<size_t> {
 public:
   SizeVec();

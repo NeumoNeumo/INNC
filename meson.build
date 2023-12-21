@@ -12,6 +12,7 @@ gmock_dep = gtest_proj.get_variable('gmock_dep')
 subdir('docs')
 
 libINNC = library('INNC',
+  'src/INNC/function.cpp',
   'src/INNC/storage.cpp',
   'src/INNC/tensor.cpp',
   'src/INNC/types.cpp',
