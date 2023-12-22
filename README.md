@@ -1,12 +1,21 @@
 #  INNC
 INNC Is Neural Networks in CPP.
 
+## Build From Source
+```bash
+git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/libtensor.git
+cd libtensor
+meson setup --buildtype release releaseBuild && cd releaseBuild
+meson compile -j $(nproc)
+meson test
+```
+
 ## Test from source
 
 ```bash
 git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/libtensor.git
 cd libtensor
-meson setup build && cd build
+meson setup -Db_sanitize=address build && cd build
 meson compile
 meson test
 ```
