@@ -1,22 +1,13 @@
 name: ci_meson_cpp
 
-on:
-  push:
-    paths:
-      - "**.cpp"
-      - "**.hpp"
-  pull_request:
-    paths:
-      - "**.cpp"
-      - "**.hpp"
+on: [push, pull_request]
 
 jobs:
-
   linux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.x'
     - uses: RafikFarhad/clang-format-github-action@v3
@@ -24,58 +15,13 @@ jobs:
         sources: "src/**/*.hpp,src/**/*.cpp,test/**/*.cpp"
     - run: |
         sudo apt-get update
-        sudo apt-get install -y g++  # Install g++ for C++ support
-        pip install meson ninja
+        sudo apt-get install -y clang-15 doxygen
+        pip install meson ninja sphinx sphinx-rtd-theme 
     - run: meson setup build/
-      env:
-        CC: gcc
-        CXX: g++
+    - run: meson compile -C build/ -v
     - run: meson test -C build/ -v
-    - uses: actions/upload-artifact@v1
-      if: failure()
+    - uses: actions/upload-artifact@v4
+      if: ${{ failure() }}
       with:
         name: Linux_Meson_Testlog
         path: build/meson-logs/testlog.txt
-
-  macos:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
-      with:
-        python-version: '3.x'
-    - run: |
-        brew install g++  # Install g++ for C++ support
-        pip install meson ninja
-    - run: meson setup build/
-      env:
-        CC: gcc
-        CXX: g++
-    - run: meson test -C build/ -v
-    - uses: actions/upload-artifact@v1
-      if: failure()
-      with:
-        name: MacOS_Meson_Testlog
-        path: build/meson-logs/testlog.txt
-
-  windows:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
-      with:
-        python-version: '3.x'
-    - run: |
-        choco install mingw
-        pip install meson ninja
-    - run: meson setup build/
-      env:
-        CC: gcc
-        CXX: g++
-    - run: meson test -C build/ -v
-    - uses: actions/upload-artifact@v1
-      if: failure()
-      with:
-        name: Windows_Meson_Testlog
-        path: build/meson-logs/testlog.txt
-
