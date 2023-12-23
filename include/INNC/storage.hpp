@@ -2,7 +2,7 @@
 
 #include <memory>
 
-class UntypedStorage : public std::shared_ptr<uint8_t> {
+class UntypedStorage : public std::shared_ptr<uint8_t[]> {
   size_t size; // in unit of bypes
 public:
   void create(size_t size);

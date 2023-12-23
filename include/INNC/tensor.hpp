@@ -8,6 +8,7 @@ namespace INNC {
 class Backward;
 class Tensor;
 
+// All member functions defined here never set up grad_fn. Also see `Tensor`.
 class TensorFrame {
 public:
   UntypedStorage data_;
@@ -20,7 +21,7 @@ public:
   size_t cnt_from_index(const SizeVec &index) const noexcept;
   std::string to_string_helper(std::ptrdiff_t offset = 0, size_t l = 0) const;
 
-  bool requires_grad; // TODO stricter encapsulation
+  bool requires_grad; // TODO 3 stricter encapsulation
   bool retain_grad;
   size_t _version;
   std::unique_ptr<Backward> grad_fn;
@@ -33,21 +34,25 @@ public:
               const size_t offset);
   ~TensorFrame();
   std::string to_string() const;
-  static std::unique_ptr<TensorFrame> make_tf(types dtype,
-                                              const SizeVec &sizes);
+  static std::unique_ptr<TensorFrame>
+  make_tf(types dtype, is_same_wo_cvref<SizeVec> auto &&sizes);
   static std::unique_ptr<TensorFrame> zeros(const SizeVec &sizes, types dtype);
   static std::unique_ptr<TensorFrame> ones(const SizeVec &sizes, types dtype);
   static std::unique_ptr<TensorFrame> zeros_like(const TensorFrame &t);
   static std::unique_ptr<TensorFrame> ones_like(const TensorFrame &t);
+  static std::unique_ptr<TensorFrame>
+  from_blob(void *data, const SizeVec &sizes, types dtype);
   size_t numel() const noexcept;
   void release() noexcept;
   INNC::types type() const;
   std::unique_ptr<TensorFrame> type(types t);
   std::unique_ptr<TensorFrame> operator[](std::string slice);
+  std::unique_ptr<TensorFrame> sum() const;
+  void zero_grad() const noexcept;
   TensorFrame &operator+=(const TensorFrame &rhs);
   void try_accumulate_grad(TensorFrame &tf);
-  friend std::unique_ptr<TensorFrame> operator+(const TensorFrame &lhs,
-                                                const TensorFrame &rhs);
+  friend std::unique_ptr<TensorFrame> no_grad_add(const TensorFrame &lhs,
+                                                  const TensorFrame &rhs);
   friend void check_same_size(const TensorFrame &lhs, const TensorFrame &rhs);
   friend class Backward;
   void backward();
@@ -76,18 +81,24 @@ public:
   static Tensor ones(const SizeVec &size, types t);
   static Tensor zeros_like(const Tensor &t);
   static Tensor ones_like(const Tensor &t);
+  static Tensor from_blob(void *data, const SizeVec &sizes, types dtype);
   size_t numel() const noexcept;
   void release() noexcept;
   INNC::types type() const;
   Tensor type(types t);
-  Tensor operator[](std::string slice); // TODO WARN
+  Tensor operator[](std::string slice); // TODO 2
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;
-  void requires_grad(bool b) noexcept;
+  void requires_grad(bool b);
   bool retain_grad() const noexcept;
   void retain_grad(bool b) noexcept;
   Tensor grad() const noexcept;
+  Tensor sum() const;
+  void zero_grad() const noexcept;
+  bool is_contiguous() const noexcept; // TODO 2
+  Tensor contiguous() const; // TODO 2
   friend Tensor operator+(const Tensor &lhs, const Tensor &rhs);
+  friend Tensor operator*(const Tensor &lhs, const Tensor &rhs);
   friend class Backward;
 };
 

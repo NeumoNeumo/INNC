@@ -3,35 +3,68 @@
 #include "INNC/function.hpp"
 #include "INNC/storage.hpp"
 #include "INNC/types.hpp"
+#include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <queue>
+#include <vector>
 
 namespace INNC {
 
+#define generate_unary_op_list(op)                                             \
+  class op##_helper {                                                          \
+  public:                                                                      \
+    constexpr static void (*spec_list[types::Count][types::Count])(            \
+        TensorFrame * to, TensorFrame *from) = {                               \
+        {op<std::int8_t, std::int8_t>, op<std::int8_t, std::int16_t>,          \
+         op<std::int8_t, std::int32_t>, op<std::int8_t, std::int64_t>,         \
+         op<std::int8_t, float>, op<std::int8_t, double>},                     \
+        {op<std::int16_t, std::int8_t>, op<std::int16_t, std::int16_t>,        \
+         op<std::int16_t, std::int32_t>, op<std::int16_t, std::int64_t>,       \
+         op<std::int16_t, float>, op<std::int16_t, double>},                   \
+        {op<std::int32_t, std::int8_t>, op<std::int32_t, std::int16_t>,        \
+         op<std::int32_t, std::int32_t>, op<std::int32_t, std::int64_t>,       \
+         op<std::int32_t, float>, op<std::int32_t, double>},                   \
+        {op<std::int64_t, std::int8_t>, op<std::int64_t, std::int16_t>,        \
+         op<std::int64_t, std::int32_t>, op<std::int64_t, std::int64_t>,       \
+         op<std::int64_t, float>, op<std::int64_t, double>},                   \
+        {op<float, std::int8_t>, op<float, std::int16_t>,                      \
+         op<float, std::int32_t>, op<float, std::int64_t>, op<float, float>,   \
+         op<float, double>},                                                   \
+        {op<double, std::int8_t>, op<double, std::int16_t>,                    \
+         op<double, std::int32_t>, op<double, std::int64_t>,                   \
+         op<double, float>, op<double, double>}};                              \
+  }
+
+// the type on the left would be the type of the return value
 #define generate_binary_op_list(op)                                            \
-  void (*op##_spec_list[types::Count][types::Count])(void *dst, size_t size,   \
-                                                     void *l, void *r) = {     \
-      {op<std::int8_t, std::int8_t>, op<std::int8_t, std::int16_t>,            \
-       op<std::int8_t, std::int32_t>, op<std::int8_t, std::int64_t>,           \
-       op<std::int8_t, float>, op<std::int8_t, double>},                       \
-      {op<std::int16_t, std::int8_t>, op<std::int16_t, std::int16_t>,          \
-       op<std::int16_t, std::int32_t>, op<std::int16_t, std::int64_t>,         \
-       op<std::int16_t, float>, op<std::int16_t, double>},                     \
-      {op<std::int32_t, std::int8_t>, op<std::int32_t, std::int16_t>,          \
-       op<std::int32_t, std::int32_t>, op<std::int32_t, std::int64_t>,         \
-       op<std::int32_t, float>, op<std::int32_t, double>},                     \
-      {op<std::int64_t, std::int8_t>, op<std::int64_t, std::int16_t>,          \
-       op<std::int64_t, std::int32_t>, op<std::int64_t, std::int64_t>,         \
-       op<std::int64_t, float>, op<std::int64_t, double>},                     \
-      {op<float, std::int8_t>, op<float, std::int16_t>,                        \
-       op<float, std::int32_t>, op<float, std::int64_t>, op<float, float>,     \
-       op<float, double>},                                                     \
-      {op<double, std::int8_t>, op<double, std::int16_t>,                      \
-       op<double, std::int32_t>, op<double, std::int64_t>, op<double, float>,  \
-       op<double, double>}}
+  class op##_helper {                                                          \
+  public:                                                                      \
+    constexpr static void (*spec_list[types::Count][types::Count])(            \
+        TensorFrame * dst, TensorFrame *l, TensorFrame *r) = {                 \
+        {op<std::int8_t, std::int8_t>, op<std::int8_t, std::int16_t>,          \
+         op<std::int8_t, std::int32_t>, op<std::int8_t, std::int64_t>,         \
+         op<std::int8_t, float>, op<std::int8_t, double>},                     \
+        {op<std::int16_t, std::int8_t>, op<std::int16_t, std::int16_t>,        \
+         op<std::int16_t, std::int32_t>, op<std::int16_t, std::int64_t>,       \
+         op<std::int16_t, float>, op<std::int16_t, double>},                   \
+        {op<std::int32_t, std::int8_t>, op<std::int32_t, std::int16_t>,        \
+         op<std::int32_t, std::int32_t>, op<std::int32_t, std::int64_t>,       \
+         op<std::int32_t, float>, op<std::int32_t, double>},                   \
+        {op<std::int64_t, std::int8_t>, op<std::int64_t, std::int16_t>,        \
+         op<std::int64_t, std::int32_t>, op<std::int64_t, std::int64_t>,       \
+         op<std::int64_t, float>, op<std::int64_t, double>},                   \
+        {op<float, std::int8_t>, op<float, std::int16_t>,                      \
+         op<float, std::int32_t>, op<float, std::int64_t>, op<float, float>,   \
+         op<float, double>},                                                   \
+        {op<double, std::int8_t>, op<double, std::int16_t>,                    \
+         op<double, std::int32_t>, op<double, std::int64_t>,                   \
+         op<double, float>, op<double, double>}};                              \
+  }
 
 size_t TensorFrame::cnt_from_index(const SizeVec &index) const noexcept {
   assertm(index.size() == this->sizes.size(), "index mismatches sizes");
@@ -73,9 +106,8 @@ TensorFrame::~TensorFrame() = default;
 
 TensorFrame::TensorFrame(TensorFrame &&t) = default;
 
-// TODO rvalue optimization
-std::unique_ptr<TensorFrame> TensorFrame::make_tf(types dtype,
-                                                  const SizeVec &sizes) {
+std::unique_ptr<TensorFrame>
+TensorFrame::make_tf(types dtype, is_same_wo_cvref<SizeVec> auto &&sizes) {
   run_expect(sizes.size() != 0, "`size` must have at least one dimension.");
   SizeVec strides;
   strides.resize(sizes.size());
@@ -83,7 +115,8 @@ std::unique_ptr<TensorFrame> TensorFrame::make_tf(types dtype,
   for (int i = sizes.size() - 1; i >= 1; --i) {
     strides[i - 1] = strides[i] * sizes[i];
   }
-  return std::make_unique<TensorFrame>(dtype, sizes, strides, 0);
+  return std::make_unique<TensorFrame>(
+      dtype, std::forward<decltype(sizes)>(sizes), strides, 0);
 }
 
 TensorFrame::TensorFrame(types dtype, const SizeVec &sizes,
@@ -101,75 +134,136 @@ TensorFrame::TensorFrame(types dtype, const SizeVec &sizes,
   this->grad_fn.reset();
 }
 
+// TODO 2: fast path, concurrency, iterator, Broadcasting
+
 template <typename L, typename R>
-void tensor_add(void *dst, size_t elem_num, void *l, void *r) {
-  using dst_type = std::common_type_t<L, R>;
-  for (size_t i = 0; i < elem_num; ++i) {
-    *(static_cast<dst_type *>(dst) + i) =
-        *(static_cast<L *>(l) + i) + *(static_cast<R *>(r) + i);
+void tensor_add(TensorFrame *dst, TensorFrame *l, TensorFrame *r) {
+  SizeVec sv;
+  auto last_idx = dst->sizes.size() - 1;
+  sv.resize(last_idx + 1);
+  for (auto &it : sv)
+    it = 0;
+  while (true) {
+    size_t ptr = last_idx;
+    while (sv[ptr] == dst->sizes[ptr]) {
+      if (ptr == 0)
+        return;
+      sv[ptr] = 0;
+      ++sv[--ptr];
+    }
+    *(reinterpret_cast<L *>(dst->data_.get()) + dst->cnt_from_index(sv)) =
+        *(reinterpret_cast<L *>(l->data_.get()) + l->cnt_from_index(sv)) +
+        *(reinterpret_cast<R *>(r->data_.get()) + r->cnt_from_index(sv));
+    ++sv[last_idx];
   }
 }
 
 template <typename L, typename R>
-void tensor_sub(void *dst, size_t elem_num, void *l, void *r) {
-  using dst_type = std::common_type_t<L, R>;
-  for (size_t i = 0; i < elem_num; ++i) {
-    *(static_cast<dst_type *>(dst) + i) =
-        *(static_cast<L *>(l) + i) - *(static_cast<R *>(r) + i);
-  }
-}
-
-template <typename L, typename R>
-void tensor_mul(void *dst, size_t elem_num, void *l, void *r) {
-  using dst_type = std::common_type_t<L, R>;
-  for (size_t i = 0; i < elem_num; ++i) {
-    *(static_cast<dst_type *>(dst) + i) =
-        *(static_cast<L *>(l) + i) * *(static_cast<R *>(r) + i);
-  }
-}
-
-template <typename L, typename R>
-void tensor_div(void *dst, size_t elem_num, void *l, void *r) {
-  using dst_type = std::common_type_t<L, R>;
-  for (size_t i = 0; i < elem_num; ++i) {
-    *(static_cast<dst_type *>(dst) + i) =
-        *(static_cast<L *>(l) + i) / *(static_cast<R *>(r) + i);
+void tensor_mul(TensorFrame *dst, TensorFrame *l, TensorFrame *r) {
+  SizeVec sv;
+  auto last_idx = dst->sizes.size() - 1;
+  sv.resize(last_idx + 1);
+  for (auto &it : sv)
+    it = 0;
+  while (true) {
+    size_t ptr = last_idx;
+    while (sv[ptr] == dst->sizes[ptr]) {
+      if (ptr == 0)
+        return;
+      sv[ptr] = 0;
+      ++sv[--ptr];
+    }
+    *(reinterpret_cast<L *>(dst->data_.get()) + dst->cnt_from_index(sv)) =
+        *(reinterpret_cast<L *>(l->data_.get()) + l->cnt_from_index(sv)) *
+        *(reinterpret_cast<R *>(r->data_.get()) + r->cnt_from_index(sv));
+    ++sv[last_idx];
   }
 }
 
 template <typename TensorType, typename NumberType>
-void tensor_fill(void *tdata, size_t elem_num, void *ndata, void *_discard) {
-  TensorType num = *static_cast<NumberType *>(ndata);
-  for (size_t i = 0; i < elem_num; ++i)
-    *(static_cast<TensorType *>(tdata) + i) = num;
+void tensor_fill(TensorFrame *tdata, TensorFrame *ndata) {
+  TensorType num = *reinterpret_cast<NumberType *>(ndata->data_.get());
+  SizeVec sv;
+  auto last_idx = tdata->sizes.size() - 1;
+  sv.resize(last_idx + 1);
+  for (auto &it : sv)
+    it = 0;
+  while (true) {
+    size_t ptr = last_idx;
+    while (sv[ptr] == tdata->sizes[ptr]) {
+      if (ptr == 0)
+        return;
+      sv[ptr] = 0;
+      ++sv[--ptr];
+    }
+    *(reinterpret_cast<TensorType *>(tdata->data_.get()) +
+      tdata->cnt_from_index(sv)) = num;
+    ++sv[last_idx];
+  }
 }
 
-template <typename FromType, typename ToType>
-void tensor_to_type(void *todata, size_t elem_num, void *fromdata,
-                    void *_discard) {
-  for (size_t i = 0; i < elem_num; ++i)
-    *(static_cast<ToType *>(todata) + i) =
-        (ToType) * (static_cast<FromType *>(fromdata) + i);
+template <typename ToType, typename FromType>
+void tensor_to_type(TensorFrame *todata, TensorFrame *fromdata) {
+  SizeVec sv;
+  auto last_idx = todata->sizes.size() - 1;
+  sv.resize(last_idx + 1);
+  for (auto &it : sv)
+    it = 0;
+  while (true) {
+    size_t ptr = last_idx;
+    while (sv[ptr] == todata->sizes[ptr]) {
+      if (ptr == 0)
+        return;
+      sv[ptr] = 0;
+      ++sv[--ptr];
+    }
+    *(reinterpret_cast<ToType *>(todata->data_.get()) +
+      todata->cnt_from_index(sv)) =
+        *(reinterpret_cast<FromType *>(fromdata->data_.get()) +
+        fromdata->cnt_from_index(sv));
+    ++sv[last_idx];
+  }
+}
+
+template <typename ToType, typename FromType>
+void tensor_sum(TensorFrame *todata, TensorFrame *fromdata) {
+  SizeVec sv;
+  auto last_idx = fromdata->sizes.size() - 1;
+  sv.resize(last_idx + 1);
+  for (auto &it : sv)
+    it = 0;
+  while (true) {
+    size_t ptr = last_idx;
+    while (sv[ptr] == fromdata->sizes[ptr]) {
+      if (ptr == 0)
+        return;
+      sv[ptr] = 0;
+      ++sv[--ptr];
+    }
+    *reinterpret_cast<ToType *>(todata->data_.get()) +=
+        *(reinterpret_cast<FromType *>(fromdata->data_.get()) +
+        fromdata->cnt_from_index(sv));
+    ++sv[last_idx];
+  }
 }
 
 generate_binary_op_list(tensor_add);
-generate_binary_op_list(tensor_sub);
 generate_binary_op_list(tensor_mul);
-generate_binary_op_list(tensor_div);
-generate_binary_op_list(tensor_fill);
-generate_binary_op_list(tensor_to_type);
+generate_unary_op_list(tensor_fill);
+generate_unary_op_list(tensor_to_type);
+generate_unary_op_list(tensor_sum);
 
 std::unique_ptr<TensorFrame> TensorFrame::ones(const SizeVec &sizes,
                                                types dtype) {
   auto ret = make_tf(dtype, sizes);
-  uint8_t i8_one = 1;
-  tensor_fill_spec_list[dtype][i8](ret->data_.get(), ret->numel(), &i8_one,
-                                   nullptr);
+  auto one_ = TensorFrame::make_tf(i8, SizeVec{1});
+  *one_->data_.get() = 1;
+  tensor_fill_helper::spec_list[dtype][i8](ret.get(), one_.get());
   return ret;
 }
 
-std::unique_ptr<TensorFrame>
-TensorFrame::zeros(const SizeVec &sizes, types dtype) {
+std::unique_ptr<TensorFrame> TensorFrame::zeros(const SizeVec &sizes,
+                                                types dtype) {
   auto ret = make_tf(dtype, sizes);
   auto start = ret->data_.get();
   std::fill(start, start + ret->data_.get_size(), 0);
@@ -184,6 +278,13 @@ std::unique_ptr<TensorFrame> TensorFrame::ones_like(const TensorFrame &t) {
   return TensorFrame::ones(t.sizes, t.dtype);
 }
 
+std::unique_ptr<TensorFrame>
+TensorFrame::from_blob(void *data, const SizeVec &sizes, types dtype) {
+  auto ret = make_tf(dtype, sizes);
+  std::memcpy(ret->data_.get(), data, ret->numel() * INNC::size_of(dtype));
+  return ret;
+}
+
 void check_same_size(const TensorFrame &lhs, const TensorFrame &rhs) {
   bool dim_eq = true;
   if (lhs.sizes.size() == rhs.sizes.size()) {
@@ -195,7 +296,7 @@ void check_same_size(const TensorFrame &lhs, const TensorFrame &rhs) {
   } else
     dim_eq = false;
   if (!dim_eq)
-    std::cerr << "Added tensors' dimension must match. Trying to add " +
+    std::cerr << "Tensors' dimension must match. Trying to add " +
                      lhs.sizes.to_string() + " with " + rhs.sizes.to_string()
               << std::endl
               << "Broadcasting has not been supported yet.";
@@ -205,26 +306,34 @@ TensorFrame &TensorFrame::operator+=(const TensorFrame &rhs) {
   run_expect(
       !requires_grad,
       "This inplace operation cannot perform on a tensor that requires grad.");
-  tensor_add_spec_list[dtype][rhs.dtype](data_.get(), numel(), data_.get(),
-                                         rhs.data_.get());
+  tensor_add_helper::spec_list[dtype][rhs.dtype](
+      this, this, const_cast<TensorFrame *>(&rhs));
   return *this;
 }
 
-std::unique_ptr<TensorFrame> operator+(TensorFrame &lhs, TensorFrame &rhs) {
-  check_same_size(lhs, rhs);
-  if (lhs.grad_fn.get() != nullptr)
-    ++lhs.grad_fn->n_outway;
-  if (rhs.grad_fn.get() != nullptr)
-    ++rhs.grad_fn->n_outway;
-  auto ret =
-      TensorFrame::make_tf(INNC::common_type(lhs.dtype, rhs.dtype), lhs.sizes);
-  auto ret_mat_start = ret->data_.get();
-  tensor_add_spec_list[lhs.dtype][rhs.dtype](ret_mat_start, lhs.numel(),
-                                             lhs.data_.get(), rhs.data_.get());
-  if (!lhs.requires_grad && !rhs.requires_grad)
+template <typename ForwardType>
+std::unique_ptr<TensorFrame> apply_no_grad_binary_op(TensorFrame &lhs,
+                                                     TensorFrame &rhs) {
+  types lt = INNC::larger_type(lhs.dtype, rhs.dtype);
+  auto ret = TensorFrame::make_tf(lt, lhs.sizes);
+  if (lhs.dtype == lt) {
+    ForwardType::spec_list[lhs.dtype][rhs.dtype](ret.get(), &lhs, &rhs);
+  } else {
+    ForwardType::spec_list[rhs.dtype][lhs.dtype](ret.get(), &rhs, &lhs);
+  }
+  return ret;
+}
+
+template <typename ForwardType, typename BackwardType>
+std::unique_ptr<TensorFrame>
+apply_binary_operator(const std::shared_ptr<TensorFrame> &lhs,
+                      const std::shared_ptr<TensorFrame> &rhs) {
+  check_same_size(*lhs.get(), *rhs.get());
+  auto ret = apply_no_grad_binary_op<ForwardType>(*lhs.get(), *rhs.get());
+  if (!lhs->requires_grad && !rhs->requires_grad)
     return ret;
   ret->requires_grad = true;
-  ret->grad_fn.reset(new AddBack(ret.get(), {&lhs, &rhs}));
+  ret->grad_fn.reset(new BackwardType(ret.get(), {lhs, rhs}));
   return ret;
 }
 
@@ -241,8 +350,7 @@ inline INNC::types TensorFrame::type() const { return this->dtype; }
 
 std::unique_ptr<TensorFrame> TensorFrame::type(types t) {
   auto tf = make_tf(t, sizes);
-  tensor_to_type_spec_list[dtype][t](tf->data_.get(), numel(), data_.get(),
-                                     nullptr);
+  tensor_to_type_helper::spec_list[t][dtype](tf.get(), this);
   return tf;
 }
 
@@ -256,40 +364,64 @@ void TensorFrame::try_accumulate_grad(TensorFrame &tf) {
   *grad += tf;
 }
 
-void TensorFrame::backward() {
-  run_expect(requires_grad,
-             "Cannot backward from a tensor that does not require grad.");
-  run_expect(grad_fn != nullptr,
-             "Cannot backward from a tensor that has no grad_func");
-
-  std::queue<TensorFrame *> q; // TODO multiprocessing
-  q.push(this);
-  grad_fn->visited = false;
-  while (!q.empty()) { // init
+void refresh_n_outway(TensorFrame *tf) {
+  std::queue<TensorFrame *> q;
+  tf->grad_fn->n_outway = 0;
+  tf->grad_fn->back_version = ++Backward::global_back_version;
+  q.push(tf);
+  while (!q.empty()) {
     auto t = q.front();
     q.pop();
-    for (auto it : t->grad_fn->input_tfs) {
-      if (it->grad_fn.get() != nullptr && it->grad_fn->visited) {
-        it->grad_fn->visited = false;
-        it->grad_fn->accumulated_n_outway = 0;
-        q.push(it);
+    for (const auto &it : t->grad_fn->input_tfs) {
+      if (it->grad_fn.get() != nullptr &&
+          it->grad_fn->back_version < Backward::global_back_version) {
+        it->grad_fn->back_version = Backward::global_back_version;
+        it->grad_fn->n_outway = 0;
+        q.push(it.get());
       }
     }
   }
+  tf->grad_fn->back_version = ++Backward::global_back_version;
+  q.push(tf);
+  while (!q.empty()) {
+    auto t = q.front();
+    q.pop();
+    for (const auto &it : t->grad_fn->input_tfs) {
+      if (it->grad_fn.get() != nullptr) {
+        ++it->grad_fn->n_outway;
+        if (it->grad_fn->back_version < Backward::global_back_version) {
+          it->grad_fn->back_version = Backward::global_back_version;
+          q.push(it.get());
+        }
+      }
+    }
+  }
+}
+
+void TensorFrame::backward() {
+  run_expect(requires_grad,
+             "Cannot backward from a tensor that does not require grad.");
+  run_expect(grad_fn.get() != nullptr,
+             "Cannot backward from a tensor that has no grad_func");
+  run_expect(numel() == 1,
+             "Only scalar number could be the start of a backward propagation");
+  refresh_n_outway(this);
+  std::queue<TensorFrame *> q; // TODO 3 multiprocessing
   q.push(this);
-  grad_fn->visited = true;
   grad = ones_like(*this);
+  grad_fn->back_version = ++Backward::global_back_version;
   while (!q.empty()) {
     auto t = q.front();
     q.pop();
     t->grad_fn->step_back();
     if (!t->retain_grad)
       t->grad.reset();
-    for (auto it : t->grad_fn->input_tfs) {
-      if (it->grad_fn.get() != nullptr && !it->grad_fn->visited &&
+    for (const auto &it : t->grad_fn->input_tfs) {
+      if (it->grad_fn.get() != nullptr &&
+          it->grad_fn->back_version < Backward::global_back_version &&
           it->grad_fn->is_ready()) {
-        it->grad_fn->visited = true;
-        q.push(it);
+        it->grad_fn->back_version = Backward::global_back_version;
+        q.push(it.get());
       }
     }
   }
@@ -310,7 +442,7 @@ void Tensor::backward() { fptr->backward(); }
 
 std::string Tensor::to_string() const {
   if (fptr == nullptr)
-    return "Tensor not exist.";
+    return "[]";
   return fptr->to_string();
 }
 
@@ -334,6 +466,10 @@ Tensor Tensor::ones_like(const Tensor &t) {
   return Tensor(TensorFrame::ones_like(*t.fptr));
 }
 
+Tensor Tensor::from_blob(void *data, const SizeVec &sizes, types dtype) {
+  return Tensor(TensorFrame::from_blob(data, sizes, dtype));
+}
+
 size_t Tensor::numel() const noexcept { return fptr->numel(); }
 
 void Tensor::release() noexcept { fptr->release(); }
@@ -348,13 +484,26 @@ Tensor &Tensor::operator+=(const Tensor &rhs) {
 }
 
 Tensor operator+(const Tensor &lhs, const Tensor &rhs) {
-  auto tf = *lhs.fptr + *rhs.fptr;
+  auto tf =
+      apply_binary_operator<tensor_add_helper, AddBack>(lhs.fptr, rhs.fptr);
+  return Tensor(tf);
+}
+
+Tensor operator*(const Tensor &lhs, const Tensor &rhs) {
+  auto tf =
+      apply_binary_operator<tensor_mul_helper, MulBack>(lhs.fptr, rhs.fptr);
   return Tensor(tf);
 }
 
 bool Tensor::requires_grad() const noexcept { return fptr->requires_grad; }
 
-void Tensor::requires_grad(bool b) noexcept { fptr->requires_grad = b; }
+void Tensor::requires_grad(bool b) {
+  if (b)
+    run_expect(fptr->type() == f32 || fptr->type() == f64,
+               "Only matrices of floating point number can require grad");
+  if(!b) fptr.reset();
+  fptr->requires_grad = b;
+}
 
 bool Tensor::retain_grad() const noexcept { return fptr->retain_grad; }
 void Tensor::retain_grad(bool b) noexcept { fptr->retain_grad = b; }
@@ -363,6 +512,37 @@ Tensor Tensor::grad() const noexcept {
   if (fptr->grad.get() == nullptr)
     return Tensor();
   return Tensor(fptr->grad);
+}
+
+std::unique_ptr<TensorFrame> TensorFrame::sum() const {
+  INNC::types dst_t;
+  if (dtype <= i64)
+    dst_t = i64;
+  else
+    dst_t = f64;
+  auto tf = zeros(SizeVec{1}, dst_t);
+  tensor_sum_helper::spec_list[dst_t][dtype](tf.get(),
+                                             const_cast<TensorFrame *>(this));
+  return tf;
+}
+
+Tensor Tensor::sum() const {
+  auto tf = fptr->sum();
+  if (fptr->requires_grad) {
+    tf->requires_grad = true;
+    tf->grad_fn.reset(new SumBack(tf.get(), {fptr}));
+  }
+  return Tensor(tf);
+}
+
+void TensorFrame::zero_grad() const noexcept{
+  if(grad.get() == nullptr) return;
+  auto d_begin = grad->data_.get();
+  std::fill(d_begin, d_begin + INNC::size_of(dtype) * numel(), 0);
+}
+
+void Tensor::zero_grad() const noexcept{
+  fptr->zero_grad();
 }
 
 } // namespace INNC
