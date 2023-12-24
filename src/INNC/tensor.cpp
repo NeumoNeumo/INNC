@@ -135,94 +135,62 @@ TensorFrame::TensorFrame(types dtype, const SizeVec &sizes,
 }
 
 // TODO 2: fast path, concurrency, iterator, Broadcasting
+void for_each_sizevec(const SizeVec &range, auto op) {
+  [op, &range]() {
+    SizeVec sv;
+    auto last_idx = range.size() - 1;
+    sv.resize(last_idx + 1);
+    for (auto &it : sv)
+      it = 0;
+    while (true) {
+      size_t ptr = last_idx;
+      while (sv[ptr] == range[ptr]) {
+        if (ptr == 0)
+          return;
+        sv[ptr] = 0;
+        ++sv[--ptr];
+      }
+      op(sv);
+      ++sv[last_idx];
+    };
+  }();
+}
 
 template <typename L, typename R>
 void tensor_add(TensorFrame *dst, TensorFrame *l, TensorFrame *r) {
-  SizeVec sv;
-  auto last_idx = dst->sizes.size() - 1;
-  sv.resize(last_idx + 1);
-  for (auto &it : sv)
-    it = 0;
-  while (true) {
-    size_t ptr = last_idx;
-    while (sv[ptr] == dst->sizes[ptr]) {
-      if (ptr == 0)
-        return;
-      sv[ptr] = 0;
-      ++sv[--ptr];
-    }
+  for_each_sizevec(dst->sizes, [=](const SizeVec &sv) {
     *(reinterpret_cast<L *>(dst->data_.get()) + dst->cnt_from_index(sv)) =
         *(reinterpret_cast<L *>(l->data_.get()) + l->cnt_from_index(sv)) +
         *(reinterpret_cast<R *>(r->data_.get()) + r->cnt_from_index(sv));
-    ++sv[last_idx];
-  }
+  });
 }
 
 template <typename L, typename R>
 void tensor_mul(TensorFrame *dst, TensorFrame *l, TensorFrame *r) {
-  SizeVec sv;
-  auto last_idx = dst->sizes.size() - 1;
-  sv.resize(last_idx + 1);
-  for (auto &it : sv)
-    it = 0;
-  while (true) {
-    size_t ptr = last_idx;
-    while (sv[ptr] == dst->sizes[ptr]) {
-      if (ptr == 0)
-        return;
-      sv[ptr] = 0;
-      ++sv[--ptr];
-    }
+  for_each_sizevec(dst->sizes, [=](const SizeVec &sv) {
     *(reinterpret_cast<L *>(dst->data_.get()) + dst->cnt_from_index(sv)) =
         *(reinterpret_cast<L *>(l->data_.get()) + l->cnt_from_index(sv)) *
         *(reinterpret_cast<R *>(r->data_.get()) + r->cnt_from_index(sv));
-    ++sv[last_idx];
-  }
+  });
 }
 
 template <typename TensorType, typename NumberType>
 void tensor_fill(TensorFrame *tdata, TensorFrame *ndata) {
   TensorType num = *reinterpret_cast<NumberType *>(ndata->data_.get());
-  SizeVec sv;
-  auto last_idx = tdata->sizes.size() - 1;
-  sv.resize(last_idx + 1);
-  for (auto &it : sv)
-    it = 0;
-  while (true) {
-    size_t ptr = last_idx;
-    while (sv[ptr] == tdata->sizes[ptr]) {
-      if (ptr == 0)
-        return;
-      sv[ptr] = 0;
-      ++sv[--ptr];
-    }
+  for_each_sizevec(tdata->sizes, [tdata, num](const SizeVec &sv) {
     *(reinterpret_cast<TensorType *>(tdata->data_.get()) +
       tdata->cnt_from_index(sv)) = num;
-    ++sv[last_idx];
-  }
+  });
 }
 
 template <typename ToType, typename FromType>
 void tensor_to_type(TensorFrame *todata, TensorFrame *fromdata) {
-  SizeVec sv;
-  auto last_idx = todata->sizes.size() - 1;
-  sv.resize(last_idx + 1);
-  for (auto &it : sv)
-    it = 0;
-  while (true) {
-    size_t ptr = last_idx;
-    while (sv[ptr] == todata->sizes[ptr]) {
-      if (ptr == 0)
-        return;
-      sv[ptr] = 0;
-      ++sv[--ptr];
-    }
+  for_each_sizevec(todata->sizes, [=](const SizeVec &sv) {
     *(reinterpret_cast<ToType *>(todata->data_.get()) +
       todata->cnt_from_index(sv)) =
         *(reinterpret_cast<FromType *>(fromdata->data_.get()) +
-        fromdata->cnt_from_index(sv));
-    ++sv[last_idx];
-  }
+          fromdata->cnt_from_index(sv));
+  });
 }
 
 template <typename ToType, typename FromType>
@@ -242,7 +210,7 @@ void tensor_sum(TensorFrame *todata, TensorFrame *fromdata) {
     }
     *reinterpret_cast<ToType *>(todata->data_.get()) +=
         *(reinterpret_cast<FromType *>(fromdata->data_.get()) +
-        fromdata->cnt_from_index(sv));
+          fromdata->cnt_from_index(sv));
     ++sv[last_idx];
   }
 }
@@ -501,7 +469,8 @@ void Tensor::requires_grad(bool b) {
   if (b)
     run_expect(fptr->type() == f32 || fptr->type() == f64,
                "Only matrices of floating point number can require grad");
-  if(!b) fptr.reset();
+  if (!b)
+    fptr.reset();
   fptr->requires_grad = b;
 }
 
@@ -535,14 +504,13 @@ Tensor Tensor::sum() const {
   return Tensor(tf);
 }
 
-void TensorFrame::zero_grad() const noexcept{
-  if(grad.get() == nullptr) return;
+void TensorFrame::zero_grad() const noexcept {
+  if (grad.get() == nullptr)
+    return;
   auto d_begin = grad->data_.get();
   std::fill(d_begin, d_begin + INNC::size_of(dtype) * numel(), 0);
 }
 
-void Tensor::zero_grad() const noexcept{
-  fptr->zero_grad();
-}
+void Tensor::zero_grad() const noexcept { fptr->zero_grad(); }
 
 } // namespace INNC
