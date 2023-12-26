@@ -1,24 +1,22 @@
-doxygen_cmd = find_program('doxygen', required: true)
-sphinx_cmd = find_program('sphinx-build', required: true)
+doxygen_cmd = find_program('doxygen', required: false)
+sphinx_cmd = find_program('sphinx-build', required: false)
 
-# Find header
+doc_src = meson.current_source_dir()
+doc_build = meson.current_build_dir()
 
 # Doxygen configuration
-doxygen_input_dir = meson.current_source_dir() / '../include'
-doxygen_output_dir = meson.current_build_dir() / 'doxygen'
-doxygen_generated = 'doxygen'
-doxyfile_in = meson.current_source_dir() / 'Doxyfile.in'
-doxyfile_out = 'Doxyfile'
-doxyfile_out_path = meson.current_build_dir() / doxyfile_out
+doxygen_input_dir = doc_src / '../include'
+doxygen_output_dir = doc_build / 'doxygen'
 
 conf_data = configuration_data()
+conf_data.set('PROJECT_NAME', meson.project_name())
+conf_data.set('VERSION', meson.project_version())
 conf_data.set('DOXYGEN_INPUT_DIR', doxygen_input_dir)
 conf_data.set('DOXYGEN_OUTPUT_DIR', doxygen_output_dir)
-conf_data.set('VERSION', meson.project_version())
 
 doxyfile = configure_file(
-  input: doxyfile_in,
-  output: doxyfile_out,
+  input: doc_src / 'Doxyfile.in',
+  output: 'Doxyfile',
   configuration: conf_data
 )
 
@@ -26,28 +24,27 @@ doxyfile = configure_file(
 doxygen_target = custom_target(
   'Doxygen',
   input: doxyfile,
-  output: doxygen_generated,
-  command: [doxygen_cmd, doxyfile],
+  output: ['doxygen',],
+  command: [doxygen_cmd, '@INPUT@'],
   install: false,
+  build_always_stale: true,
 )
 
-## Sphinx configuration
-sphinx_source = meson.current_source_dir()
-sphinx_build = meson.current_build_dir() / 'sphinx'
 
 # Sphinx custom target
 sphinx_target = custom_target(
   'Sphinx',
   input: files([
-    sphinx_source / 'conf.py',
-    meson.current_source_dir() / 'index.rst',
+    doc_src / 'conf.py',
+    doc_src / 'index.rst',
   ]),
   output: 'sphinx',
-  command: [sphinx_cmd, '-b', 'html', sphinx_source, 
-    sphinx_build, '-Dbreathe_projects.libtensor=@0@'.format(doxygen_output_dir / 'xml')
+  command: [sphinx_cmd, '-b', 'html', doc_src, 
+    '@OUTPUT@', '-Dbreathe_projects.INNC=@0@'.format(doxygen_output_dir / 'xml')
   ],
   install: false,
-  depends: doxygen_target
+  depends: doxygen_target,
+  build_always_stale: true,
 )
 
 

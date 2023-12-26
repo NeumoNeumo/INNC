@@ -58,6 +58,23 @@ public:
   void backward();
 };
 
+/**
+ * @brief ``Tensor`` holds the information of a multi-dimentional matrix. The
+ * shape, stride, type is dynamic to this class, which means you might assign
+ * the same object of ``Tensor`` with tensors with distinct sizes. Most of the
+ * case, the member function of ``Tensor`` returns a new ``Tensor`` object.
+ * Inplace operation is not encourged in INNC because it may break the
+ * dependency of the backward graph.
+ *
+ * Examples:
+ * \code{.cpp}
+ * auto a = INNC::Tensor::zeros({2, 3, 4}, INNC::i16);
+ * std::cout << a.to_string << std::endl;
+ * a = INNC::Tensor::ones({4, 3, 2}, INNC::i32);
+ * std::cout << a.to_string << std::endl;
+ * \endcode
+ * 
+ */
 class Tensor {
 private:
   std::shared_ptr<TensorFrame> fptr;
@@ -66,8 +83,25 @@ private:
   Tensor(std::shared_ptr<TensorFrame> &tf);
 
 public:
+  /**
+   * @brief Initialize an empty Tensor.
+   *
+   */
   Tensor();
-  Tensor(const Tensor &) = delete;
+
+  /**
+   * @brief The ctor is deleted because of its ambiguous semantics.
+   * 
+   * Example:
+   * \code{.cpp}
+   * auto a = INNC::Tensor::zeros({2, 3, 4}, INNC::i16);
+   * // auto b = INNC::Tensor(a); // Don't do that.
+   * auto b = a.clone().detach(); // Use this syntax
+   * auto c = a.detach().clone(); // or this syntax instead.
+   * \endcode
+   *
+   */
+  Tensor(const Tensor &t) = delete;
   Tensor(Tensor &&t);
   Tensor &operator=(const Tensor &t);
   Tensor &operator=(Tensor &&t);

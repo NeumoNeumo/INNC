@@ -3,25 +3,41 @@ name: ci_meson_cpp
 on: [push, pull_request]
 
 jobs:
-  linux:
+  test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
         python-version: '3.x'
-    - uses: RafikFarhad/clang-format-github-action@v3
+    - name: clang format
+      uses: RafikFarhad/clang-format-github-action@v3
       with:
         sources: "src/**/*.hpp,src/**/*.cpp,test/**/*.cpp"
-    - run: |
+    - name: Install dependencies
+      run: |
         sudo apt-get update
-        sudo apt-get install -y clang-15 doxygen
-        pip install meson ninja sphinx sphinx-rtd-theme 
-    - run: meson setup build/
-    - run: meson compile -C build/ -v
-    - run: meson test -C build/ -v
-    - uses: actions/upload-artifact@v4
+        sudo apt-get install -y doxygen
+        pip install meson ninja sphinx furo breathe
+    - name: Build
+      run: meson setup build/ && meson compile -C build/ -v 
+    - name: Test
+      run: meson test -C build/ -v
+    - name: Upload failure if any
+      uses: actions/upload-artifact@v4
       if: ${{ failure() }}
       with:
         name: Linux_Meson_Testlog
         path: build/meson-logs/testlog.txt
+    - name: Document generation
+      run: ninja docs/sphinx -C build/
+    - name: Deploy to Github Page
+      uses: peaceiris/actions-gh-pages@v3
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      with:
+        publish_branch: gh-pages
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: build/docs/sphinx/
+        force_orphan: true
