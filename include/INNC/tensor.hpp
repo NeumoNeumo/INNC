@@ -56,6 +56,7 @@ public:
   friend void check_same_size(const TensorFrame &lhs, const TensorFrame &rhs);
   friend class Backward;
   void backward();
+  static std::unique_ptr<TensorFrame> reshape(const TensorFrame &input, const SizeVec &sizes);
 };
 
 class Tensor {
@@ -100,6 +101,7 @@ public:
   friend Tensor operator+(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator*(const Tensor &lhs, const Tensor &rhs);
   friend class Backward;
+  static Tensor reshape(const Tensor &input, const SizeVec &sizes);
 };
 
 } // namespace INNC

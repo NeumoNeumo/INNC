@@ -513,4 +513,56 @@ void TensorFrame::zero_grad() const noexcept {
 
 void Tensor::zero_grad() const noexcept { fptr->zero_grad(); }
 
+std::unique_ptr<TensorFrame> INNC::TensorFrame::reshape(const TensorFrame &input, const SizeVec &sizes){
+  // Make sure the shape is legal
+  int input_num = 1, output_num = 1;
+  for (int i = 0; i < input.sizes.size(); i++){
+    input_num *= input.sizes[i];
+  }
+  for (int i = 0; i < sizes.size(); i++){
+    output_num *= sizes[i];
+  }
+  run_expect(input_num == output_num, "You're turning the tensor into an impossible shape.");
+  // Create a tensorframe of a given shape
+  auto tf = zeros(sizes, input.type()); 
+  // // Iterator of point coordinates of input and output tensors
+  // SizeVec input_index;
+  // input_index.resize(input.sizes.size());
+  // for (auto &it : input_index) it = 0;
+  // SizeVec output_index;
+  // output_index.resize(sizes.size());
+  // for (auto &it : output_index) it = 0;
+  // while (true)
+  // {
+  //   if (output_index[0] >= sizes[0]) break;
+  //   // put the value
+  //
+  //
+  //   // Put the coordinate to the next point
+  //   input_coordinate[input.sizes.size()-1]++;
+  //   for (int i = sizes.size()-1; i >= 1; i--){
+  //     if (input_coordinate[i] >= input.sizes[i]){ 
+  //       input_coordinate[i] -= input.sizes[i];
+  //       input_coordinate[i-1]++;
+  //     }
+  //   }
+  //   output_coordinate[sizes.size()-1]++;
+  //   for (int i = sizes.size()-1; i >= 1; i--){
+  //     if (output_coordinate[i] >= sizes[i]){ 
+  //       output_coordinate[i] -= sizes[i];
+  //       output_coordinate[i-1]++;
+  //     }
+  //   }
+  // }
+  for (int i = 0; i < input_num; i++){
+    *(reinterpret_cast<input.fptr.dtype *>(tf.data_.get()) + i) =
+        *(reinterpret_cast<L *>(input.data_.get()) + i)
+  }
+}
+
+Tensor Tensor::reshape(const Tensor &input, const SizeVec &sizes) {
+  auto tf = TensorFrame::reshape(input.fptr, sizes);
+  return Tensor(tf);
+}
+
 } // namespace INNC
