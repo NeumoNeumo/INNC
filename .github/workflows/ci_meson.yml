@@ -20,17 +20,27 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y doxygen
-        pip install meson ninja sphinx furo breathe
+        pip install meson ninja sphinx furo breathe gcovr
     - name: Build
-      run: meson setup build/ && meson compile -C build/ -v 
+      run: |
+        meson setup -Db_coverage=true -Db_sanitize=address build/
+        meson compile -C build/ -v 
     - name: Test
-      run: meson test -C build/ -v
+      run: | 
+        meson test -C build/ -v && ninja coverage-xml -C build/
     - name: Upload failure if any
       uses: actions/upload-artifact@v4
       if: ${{ failure() }}
       with:
         name: Linux_Meson_Testlog
         path: build/meson-logs/testlog.txt
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./build/meson-logs/coverage.xml
+        name: codecov-umbrella
+        verbose: true
     - name: Document generation
       run: ninja docs/sphinx -C build/
     - name: Deploy to Github Page

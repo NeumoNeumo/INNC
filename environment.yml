@@ -3,6 +3,7 @@ channels:
 dependencies:
 - pip
 - doxygen
+- gcovr
 - sphinx
 - breathe
 - meson

@@ -60,7 +60,7 @@ Build From Source
 
    git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/libtensor.git
    cd libtensor
-   meson setup -Db_sanitize=address build && cd build
+   meson setup -Db_sanitize=address build/ && cd build
    meson compile -j $(nproc)
    meson test
 
@@ -71,6 +71,6 @@ Document generation
 
    git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/libtensor.git
    cd libtensor
-   meson setup -Db_sanitize=address build && cd build
+   meson setup build && cd build
    ninja docs/sphinx
 
