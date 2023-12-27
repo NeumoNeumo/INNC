@@ -1,4 +1,4 @@
-name: ci_meson_cpp
+name: build
 
 on: [push, pull_request]
 
