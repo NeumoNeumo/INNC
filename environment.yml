@@ -1,12 +1,15 @@
 channels:
 - conda-forge
 dependencies:
+- pip
 - doxygen
+- gcovr
 - sphinx
 - breathe
 - meson
 - ninja
 - pybind11
-environment: {}
+- clang-format
+- pip:
+  - furo
 name: INNC
-

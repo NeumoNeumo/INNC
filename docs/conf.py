@@ -1,7 +1,7 @@
-from cgitb import html
-
+project = 'INNC'
+author = 'Jianhui Xu, Chengze Wang, Zijie Wen'
 extensions = ["breathe"]
 
-html_theme = "sphinx_rtd_theme"
+html_theme = 'furo'
 
-breathe_default_project = "libtensor"
+breathe_default_project = "INNC"
