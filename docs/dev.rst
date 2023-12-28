@@ -58,8 +58,8 @@ Build From Source
 
 .. code-block:: bash
 
-   git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/libtensor.git
-   cd libtensor
+   git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/INNC.git
+   cd INNC
    meson setup -Db_sanitize=address build/ && cd build
    meson compile -j $(nproc)
    meson test
@@ -69,8 +69,8 @@ Document generation
 
 .. code-block:: bash
 
-   git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/libtensor.git
-   cd libtensor
+   git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/INNC.git
+   cd INNC
    meson setup build && cd build
    ninja docs/sphinx
 
