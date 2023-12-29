@@ -1,8 +1,13 @@
 #include "INNC/tensor.hpp"
+#include "C:\Users\31222\CLionProjects\forProject\INNC\include\INNC\tensor.hpp"
 #include "INNC/exceptions.hpp"
+#include "C:\Users\31222\CLionProjects\forProject\INNC\include\INNC\exceptions.hpp"
 #include "INNC/function.hpp"
+#include "C:\Users\31222\CLionProjects\forProject\INNC\include\INNC\function.hpp"
 #include "INNC/storage.hpp"
+#include "C:\Users\31222\CLionProjects\forProject\INNC\include\INNC\storage.hpp"
 #include "INNC/types.hpp"
+#include "C:\Users\31222\CLionProjects\forProject\INNC\include\INNC\types.hpp"
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
