@@ -534,7 +534,7 @@ std::unique_ptr<TensorFrame> INNC::TensorFrame::reshape_without_grad(const Tenso
 
 std::unique_ptr<TensorFrame> INNC::TensorFrame::reshape(const TensorFrame &input, const SizeVec &sizes){
   auto tf = reshape_without_grad(input, sizes);
-  // 等会把梯度返回做了
+
   if (!input.requires_grad) return tf;
   tf->requires_grad = true;
   tf->grad_fn.reset(new ReshapeBack(tf.get(), {input}));
