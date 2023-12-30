@@ -513,8 +513,7 @@ void TensorFrame::zero_grad() const noexcept {
 
 void Tensor::zero_grad() const noexcept { fptr->zero_grad(); }
 
-
-std::unique_ptr<TensorFrame> INNC::TensorFrame::reshape(const TensorFrame &input, const SizeVec &sizes){
+std::unique_ptr<TensorFrame> INNC::TensorFrame::reshape_without_grad(const TensorFrame &input, const SizeVec &sizes){
   // Make sure the shape is legal
   int input_num = 1, output_num = 1;
   for (int i = 0; i < input.sizes.size(); i++){
@@ -529,12 +528,22 @@ std::unique_ptr<TensorFrame> INNC::TensorFrame::reshape(const TensorFrame &input
   for (int i = 0; i < input_num; i++){
     *((tf.data_.get()) + i) = *((input.data_.get()) + i);
   }
+  return tf;
+}
+
+
+std::unique_ptr<TensorFrame> INNC::TensorFrame::reshape(const TensorFrame &input, const SizeVec &sizes){
+  auto tf = reshape_without_grad(input, sizes);
   // 等会把梯度返回做了
+  if (!input.requires_grad) return tf;
+  tf->requires_grad = true;
+  tf->grad_fn.reset(new ReshapeBack(tf.get(), {input}));
   return tf;
 }
 
 Tensor Tensor::reshape(const Tensor &input, const SizeVec &sizes) {
   auto tf = TensorFrame::reshape(input.fptr, sizes);
+  
   return Tensor(tf);
 }
 

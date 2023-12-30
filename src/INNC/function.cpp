@@ -54,7 +54,8 @@ ReshapeBack::ReshapeBack(
     : Backward(this_tf, input_tfs){};
 
 void ReshapeBack::step_back() {
-  
+  TensorFrame *
+  input_tfs[0]->try_accumulate_grad(TensorFrame::reshape_without_grad(*input_tfs[0].get())); // 对reshape后的张量的求导矩阵应为对原张量求导矩阵的reshape
 }
 
 } // namespace INNC

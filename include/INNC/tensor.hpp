@@ -56,6 +56,7 @@ public:
   friend void check_same_size(const TensorFrame &lhs, const TensorFrame &rhs);
   friend class Backward;
   void backward();
+  static std::unique_ptr<TensorFrame> reshape_without_grad(const TensorFrame &input, const SizeVec &sizes);
   static std::unique_ptr<TensorFrame> reshape(const TensorFrame &input, const SizeVec &sizes);
 };
 
