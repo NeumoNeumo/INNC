@@ -49,7 +49,7 @@ public:
   INNC::types type() const;
   std::unique_ptr<TensorFrame> type(types t);
   std::unique_ptr<TensorFrame> operator[](std::string slice);
-  std::unique_ptr<TensorFrame> TensorFrame::slice(const std::vector<int[3]>& slices) const ;
+  std::unique_ptr<TensorFrame> slice(const std::vector<std::array<int, 3>>& slices) const ;
   std::unique_ptr<TensorFrame> sum() const;
   void zero_grad() const noexcept;
   TensorFrame &operator+=(const TensorFrame &rhs);
@@ -140,14 +140,4 @@ public:
 };
 
 } // namespace INNC
-std::vector<std::string> splitString(const std::string& str, char delimiter) {
-    std::vector<std::string> result;
-    std::istringstream ss(str);
-    std::string token;
-
-    while (std::getline(ss, token, delimiter)) {
-        result.push_back(token);
-    }
-
-    return result;
-}
+std::vector<std::string> splitString(const std::string& str, char delimiter) ;
