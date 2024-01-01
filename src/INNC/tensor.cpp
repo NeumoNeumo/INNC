@@ -519,36 +519,36 @@ void TensorFrame::zero_grad() const noexcept {
 void Tensor::zero_grad() const noexcept { fptr->zero_grad(); }
 
 std::unique_ptr<TensorFrame> TensorFrame::operator[](std::string slice){
-  std::vector<int[3]> a;
-  std::vector<std::string> b=splitString(slice,',');
-  run_expect(b.size()>this->sizes.size(),"error");
-  
-  for (size_t i = 0; i < this->sizes.size(); i++)
-  {
-    if (b.size()<=i)
-    {
-      const int k = this->sizes[i]-1;
-      a.push_back({0,k,1});
-    }else{
-      std::vector c=splitString(b[i],':');
-      int a1=0;int a2=0;int a3=1;
-      run_expect(c.size()>3,"error");
-      if (c.size()==3)
-      {
-        a3=std::stoi(c[2]);
-      }
-      a1=std::stoi(c[0]);
-      if (c.size()>=2)
-      {
-        run_expect(c[0]<c[1],"error");
-        a2=std::stoi(c[1]);
-      }
-      a.push_back({a1,a2,a3});
+    std::vector<std::array<int, 3>> a;
+    std::vector<std::string> b = splitString(slice, ',');
+    run_expect(b.size() > this->sizes.size(), "error");
+
+    for (size_t i = 0; i < this->sizes.size(); i++) {
+        std::array<int, 3> sliceValues;
+
+        if (b.size() <= i) {
+            const int k = this->sizes[i] - 1;
+            sliceValues = {0, k, 1};
+        } else {
+            std::vector<std::string> c = splitString(b[i], ':');
+            int a1 = 0; int a2 = 0; int a3 = 1;
+            run_expect(c.size() <= 3, "error");
+            if (c.size() == 3) {
+                a3 = std::stoi(c[2]);
+            }
+            a1 = std::stoi(c[0]);
+            if (c.size() >= 2) {
+                run_expect(std::stoi(c[0]) < std::stoi(c[1]), "error");
+                a2 = std::stoi(c[1]);
+            }
+            sliceValues = {a1, a2, a3};
+        }
+
+        a.push_back(sliceValues);
     }
-  }
-  return this->slice(a);
+    return this->slice(a);
 }
-std::unique_ptr<TensorFrame> TensorFrame::slice(const std::vector<int[3]>& slices) const {
+std::unique_ptr<TensorFrame> TensorFrame::slice(const std::vector<std::array<int, 3>>& slices) const {
     for (size_t i = 0; i < slices.size(); i++)
     {
       if (slices[i][0]<0)
@@ -583,5 +583,15 @@ std::unique_ptr<TensorFrame> TensorFrame::slice(const std::vector<int[3]>& slice
 Tensor Tensor::operator[](std::string slice){
   return Tensor((*this->fptr)[slice]);
 }
-
 } // namespace INNC
+std::vector<std::string> splitString(const std::string& str, char delimiter) {
+    std::vector<std::string> result;
+    std::istringstream ss(str);
+    std::string token;
+
+    while (std::getline(ss, token, delimiter)) {
+        result.push_back(token);
+    }
+
+    return result;
+}
