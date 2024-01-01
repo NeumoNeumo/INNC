@@ -52,6 +52,8 @@ The following commands are helpful to Debian users.
   pipx install sphinx
   pipx install breathe
   pipx install furo
+  pipx install gcovr
+  pipx install pybind11
 
 Build From Source
 -------------------------

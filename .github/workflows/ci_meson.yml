@@ -20,7 +20,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y doxygen
-        pip install meson ninja sphinx furo breathe gcovr
+        pip install meson ninja sphinx furo breathe gcovr pybind11
     - name: Build
       run: |
         meson setup -Db_coverage=true -Db_sanitize=address build/
