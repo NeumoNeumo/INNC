@@ -33,7 +33,7 @@ std::string SizeVec::to_string() const noexcept {
   bool begin = true;
   for (auto i : *this) {
     if (begin) {
-      s += i;
+      s += std::to_string(i);
       begin = false;
       continue;
     }

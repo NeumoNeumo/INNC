@@ -15,7 +15,7 @@ inline types larger_type(types a, types b) { return a >= b ? a : b; }
 constexpr unsigned char size_of(types t) { return size_of_data_[t]; }
 std::string innc_type_to_string(void *ptr, types t);
 
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 using larger_t = std::conditional_t<sizeof(T1) >= sizeof(T2), T1, T2>;
 
 template <typename T, typename R>
@@ -25,7 +25,7 @@ class SizeVec : public std::vector<size_t> {
 public:
   SizeVec();
   SizeVec(const std::initializer_list<size_t> &init_list);
-  SizeVec(is_same_wo_cvref<std::vector<int>> auto&& vec);
+  SizeVec(is_same_wo_cvref<std::vector<int>> auto &&vec);
   friend std::ostream &operator<<(std::ostream &o, const SizeVec &sv) noexcept;
   std::string to_string() const noexcept;
 };

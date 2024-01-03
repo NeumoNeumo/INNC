@@ -7,7 +7,6 @@
 #define assertm(exp, msg) assert(((void)(msg), exp))
 #define run_expect(exp, msg)                                                   \
   if (!(exp)) {                                                                \
-    std::cerr << msg << std::endl;                                             \
-    abort();                                                                   \
+    throw std::runtime_error(msg);                                             \
   }
 namespace INNC {}

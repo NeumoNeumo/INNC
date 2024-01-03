@@ -31,7 +31,7 @@ public:
   TensorFrame(TensorFrame &&t);
   TensorFrame &operator=(const TensorFrame &t) = delete;
   TensorFrame(types dtype, const SizeVec &sizes, const SizeVec &strides,
-              const size_t offset);
+              const size_t offset, bool prealloc = true);
   ~TensorFrame();
   std::string to_string() const;
   static std::unique_ptr<TensorFrame>
@@ -46,7 +46,7 @@ public:
   void release() noexcept;
   INNC::types type() const;
   std::unique_ptr<TensorFrame> type(types t);
-  std::unique_ptr<TensorFrame> operator[](std::string slice);
+  std::unique_ptr<TensorFrame> operator[](const std::string &slice);
   std::unique_ptr<TensorFrame> sum() const;
   void zero_grad() const noexcept;
   TensorFrame &operator+=(const TensorFrame &rhs);
@@ -73,7 +73,7 @@ public:
  * a = INNC::Tensor::ones({4, 3, 2}, INNC::i32);
  * std::cout << a.to_string << std::endl;
  * \endcode
- * 
+ *
  */
 class Tensor {
 private:
@@ -91,7 +91,7 @@ public:
 
   /**
    * @brief The ctor is deleted because of its ambiguous semantics.
-   * 
+   *
    * Example:
    * \code{.cpp}
    * auto a = INNC::Tensor::zeros({2, 3, 4}, INNC::i16);
@@ -120,7 +120,7 @@ public:
   void release() noexcept;
   INNC::types type() const;
   Tensor type(types t);
-  Tensor operator[](std::string slice); // TODO 2
+  Tensor operator[](const std::string &slice);
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;
   void requires_grad(bool b);
@@ -130,7 +130,7 @@ public:
   Tensor sum() const;
   void zero_grad() const noexcept;
   bool is_contiguous() const noexcept; // TODO 2
-  Tensor contiguous() const; // TODO 2
+  Tensor contiguous() const;           // TODO 2
   friend Tensor operator+(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator*(const Tensor &lhs, const Tensor &rhs);
   friend class Backward;

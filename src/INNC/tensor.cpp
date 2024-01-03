@@ -3,15 +3,9 @@
 #include "INNC/function.hpp"
 #include "INNC/storage.hpp"
 #include "INNC/types.hpp"
-#include <concepts>
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
+#include "INNC/utils/utils.hpp"
 #include <cstring>
-#include <iostream>
-#include <memory>
 #include <queue>
-#include <vector>
 
 namespace INNC {
 
@@ -98,8 +92,9 @@ std::string TensorFrame::to_string_helper(std::ptrdiff_t offset,
 
 std::string TensorFrame::to_string() const {
   if (this->sizes.size() == 0)
-    return "[]";
-  return to_string_helper();
+    return INNC::innc_type_to_string(
+        data_.get() + offset * INNC::size_of(dtype), dtype);
+  return to_string_helper(offset * INNC::size_of(dtype));
 }
 
 TensorFrame::~TensorFrame() = default;
@@ -120,14 +115,15 @@ TensorFrame::make_tf(types dtype, is_same_wo_cvref<SizeVec> auto &&sizes) {
 }
 
 TensorFrame::TensorFrame(types dtype, const SizeVec &sizes,
-                         const SizeVec &strides, const size_t offset)
+                         const SizeVec &strides, const size_t offset,
+                         bool prealloc)
     : dtype(dtype), sizes(sizes), strides(strides), offset(offset) {
   size_t space = size_of(dtype);
   for (auto s : sizes) {
     space *= s;
   }
-  run_expect(space != 0, "All dimensions of `size` must be non-zero.");
-  this->data_.create(space);
+  if (prealloc)
+    data_.create(space);
   this->requires_grad = false;
   this->retain_grad = false;
   this->_version = 0;
@@ -512,5 +508,109 @@ void TensorFrame::zero_grad() const noexcept {
 }
 
 void Tensor::zero_grad() const noexcept { fptr->zero_grad(); }
+
+std::unique_ptr<TensorFrame> TensorFrame::operator[](const std::string &slice) {
+  std::vector<std::string> each_dim = ssplit(slice, ',');
+  SizeVec _sizes;
+  SizeVec _strides;
+  size_t _offset = offset;
+  run_expect(each_dim.size() <= this->sizes.size(),
+             "Dimension of slicing is larger than sizes.");
+  for (size_t dim = 0; dim < this->sizes.size(); ++dim) {
+    std::vector<std::string> split_slice;
+    if (dim < each_dim.size()) {
+      split_slice = ssplit(each_dim[dim], ':');
+      for (auto &s : split_slice)
+        trim_(s);
+    } else
+      split_slice = {"", "", ""};
+    if (split_slice.size() == 1) { // like a[-2]
+      long long idx = std::stoi(split_slice[0]);
+      if (idx < 0)
+        idx += sizes[dim];
+      run_expect(
+          idx >= 0 && idx < static_cast<long long>(sizes[dim]),
+          sformat("index %d is out of bounds for dimension %lu with size %lu",
+                  idx, dim, sizes[dim]));
+      _offset += strides[dim] * idx;
+    } else { // like a[-2:]
+      if (sizes[dim] == 0) {
+        _sizes.push_back(0);
+        _strides.push_back(0);
+        continue;
+      }
+      for (int i = split_slice.size(); i < 3; ++i)
+        split_slice.push_back("");
+      long long step, beg, end;
+      if (split_slice[2].size() != 0) {
+        step = stoll(split_slice[2]);
+        run_expect(step != 0, "slice step cannot be zero");
+      } else
+        step = 1;
+      if (split_slice[0].size() != 0) {
+        beg = stoll(split_slice[0]);
+        if (beg < 0)
+          beg += sizes[dim];
+        if (beg < 0) {
+          if (step > 0)
+            beg = 0;
+          else {
+            _sizes.push_back(0);
+            _strides.push_back(0);
+            continue;
+          }
+        }
+        if (beg >= static_cast<long long>(sizes[dim])) {
+          if (step > 0) {
+            _sizes.push_back(0);
+            _strides.push_back(0);
+            continue;
+          } else
+            beg = sizes[dim] - 1;
+        }
+      } else
+        beg = step > 0 ? 0 : sizes[dim] - 1;
+      if (split_slice[1].size() != 0) {
+        end = stoll(split_slice[1]);
+        if (end < 0)
+          end += sizes[dim];
+        if (step > 0) {
+          if (end <= 0) {
+            _sizes.push_back(0);
+            _strides.push_back(0);
+            continue;
+          }
+          if (end > static_cast<long long>(sizes[dim]))
+            end = sizes[dim];
+        } else {
+          if (end < 0)
+            end = -1;
+          if (end >= static_cast<long long>(sizes[dim]) - 1) {
+            _sizes.push_back(0);
+            _strides.push_back(0);
+            continue;
+          }
+        }
+      } else
+        end = step > 0 ? sizes[dim] : -1;
+      if ((step > 0 && beg >= end) || (step < 0 && beg <= end)) {
+        _sizes.push_back(0);
+        _strides.push_back(0);
+        continue;
+      }
+      _sizes.push_back((std::abs(end - beg) - 1) / std::abs(step) + 1);
+      _strides.push_back(step * strides[dim]);
+      _offset += beg * strides[dim];
+    } // like a[-2:]
+  }
+  auto ret = make_unique<TensorFrame>(dtype, _sizes, _strides, _offset, false);
+  ret->data_ = data_;
+  ret->grad = grad;
+  return ret;
+}
+
+Tensor Tensor::operator[](const std::string &slice) {
+  return Tensor((*this->fptr)[slice]);
+}
 
 } // namespace INNC

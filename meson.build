@@ -16,6 +16,7 @@ libINNC = library('INNC',
   'src/INNC/storage.cpp',
   'src/INNC/tensor.cpp',
   'src/INNC/types.cpp',
+  'src/INNC/utils/utils.cpp',
   include_directories: incdir,
 )
 

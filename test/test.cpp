@@ -1,5 +1,4 @@
 #include "INNC/INNC.hpp"
-#include "INNC/types.hpp"
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <iostream>
@@ -8,6 +7,7 @@
 std::int8_t data_i8_1[6] = {1, -3, -5, 7, -9, 11};
 std::int16_t data_i16_1[6] = {0, -2, 4, 6, 8, -10};
 std::string output_i8_1 = "[[1, -3, -5], [7, -9, 11]]";
+std::int16_t data_i16_2[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 
 std::string typed_output(const std::string &s, INNC::types) {
   // TODO 2
@@ -47,7 +47,7 @@ TEST(basic, type) {
   ASSERT_EQ(b.to_string(), output_i8_1);
   a = INNC::Tensor::from_blob(data_i8_1 + 1, INNC::SizeVec{1}, INNC::i8);
   a = a.type(INNC::f64);
-  ASSERT_EQ(a.to_string(), "["+ std::to_string(-3.0) +"]");
+  ASSERT_EQ(a.to_string(), "[" + std::to_string(-3.0) + "]");
   a = a.type(INNC::i8);
   ASSERT_EQ(a.to_string(), "[-3]");
 }
@@ -60,6 +60,52 @@ TEST(arithmetic, add) {
   ASSERT_EQ((a + b).to_string(), "[[2, 2, 2], [2, 2, 2]]");
 }
 
+TEST(index, slice) {
+  // [[0, 1, 2],
+  //  [3, 4, 5],
+  //  [6, 7, 8],
+  //  [9,10,11]]
+  auto a = INNC::Tensor::from_blob(data_i16_2, {4, 3}, INNC::i16);
+  auto b = a[""];
+  ASSERT_EQ(b.size().to_string(), "[4, 3]");
+  b = a[","];
+  ASSERT_EQ(b.size().to_string(), "[4, 3]");
+  b = a[":,::"];
+  ASSERT_EQ(b.size().to_string(), "[4, 3]");
+  b = a[":,"];
+  ASSERT_EQ(b.size().to_string(), "[4, 3]");
+  b = a["1, 1"];
+  ASSERT_EQ(b.size().to_string(), "[]");
+  ASSERT_EQ(b.to_string(), "4");
+  b = a["2,:"];
+  ASSERT_EQ(b.size().to_string(), "[3]");
+  ASSERT_EQ(b.to_string(), "[6, 7, 8]");
+  b = a[":,-1"];
+  ASSERT_EQ(b.size().to_string(), "[4]");
+  ASSERT_EQ(b.to_string(), "[2, 5, 8, 11]");
+  b = a["-4:-1:2,-1:0:-2"];
+  ASSERT_EQ(b.size().to_string(), "[2, 1]");
+  ASSERT_EQ(b.to_string(), "[[2], [8]]");
+  b = a["-99: 99 :2, 99 : -99:-2"];
+  ASSERT_EQ(b.size().to_string(), "[2, 2]");
+  ASSERT_EQ(b.to_string(), "[[2, 0], [8, 6]]");
+  b = a["::2, ::-2"];
+  ASSERT_EQ(b.size().to_string(), "[2, 2]");
+  ASSERT_EQ(b.to_string(), "[[2, 0], [8, 6]]");
+  b = a["99::2, :-99:-2"];
+  ASSERT_EQ(b.size().to_string(), "[0, 2]");
+  ASSERT_EQ(b.to_string(), "[]");
+  b = b["-2:,1"];
+  ASSERT_EQ(b.size().to_string(), "[0]");
+  ASSERT_EQ(b.to_string(), "[]");
+  b = a["-5::-2,:-4:2"];
+  ASSERT_EQ(b.size().to_string(), "[0, 0]");
+  ASSERT_EQ(b.to_string(), "[]");
+  b = a[":3:-2,2:1:2"];
+  ASSERT_EQ(b.size().to_string(), "[0, 0]");
+  ASSERT_EQ(b.to_string(), "[]");
+}
+
 TEST(arithmetic, mul) {
   auto a = INNC::Tensor::from_blob(data_i8_1, {2, 3}, INNC::i8);
   auto b = INNC::Tensor::from_blob(data_i16_1, {2, 3}, INNC::i16);
@@ -67,7 +113,7 @@ TEST(arithmetic, mul) {
   ASSERT_EQ((a * (a * b)).to_string(), "[[0, -18, 100], [294, 648, -1210]]");
 }
 
-TEST(arithmetic, sum){
+TEST(arithmetic, sum) {
   auto a = INNC::Tensor::from_blob(data_i8_1, {2, 3}, INNC::i8);
   ASSERT_EQ(a.sum().to_string(), "[2]");
   a = INNC::Tensor::from_blob(data_i16_1, {3, 2}, INNC::i16);
@@ -110,6 +156,8 @@ TEST(autograd, add) {
   d.sum().backward();
   ASSERT_EQ(a.grad().to_string(), "[" + std::to_string(5.0) + "]");
   ASSERT_EQ(b.grad().to_string(), "[" + std::to_string(4.0) + "]");
+  a.zero_grad();
+  ASSERT_EQ(a.grad().to_string(), "[" + std::to_string(0.0) + "]");
 }
 
 TEST(autograd, mul) {
