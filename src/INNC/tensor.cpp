@@ -752,11 +752,13 @@ namespace INNC
     return Tensor(tf);
   }
 
-Tensor Tensor::reshape(const std::string &sizes){
+  Tensor Tensor::reshape(const std::string &sizes)
+  {
     return Tensor(TensorFrame::reshape(this->fptr, sizes));
   }
 
-  Tensor Tensor::reshape_as(const Tensor &input){
+  Tensor Tensor::reshape_as(const Tensor &input)
+  {
     return Tensor(TensorFrame::reshape(this->fptr, input.size()));
   }
 
@@ -780,14 +782,17 @@ Tensor Tensor::reshape(const std::string &sizes){
     {
       std::string numberStr = size_text.substr(startPos, endPos - startPos);
 
-      if (numberStr[0] == '-'){
+      if (numberStr[0] == '-')
+      {
         run_expect(!have_minus_one, "You cannot have two dimensions be -1");
         have_minus_one = true;
         minus_one_index = sizes_.size();
         sizes_.push_back(0);
 
         startPos = endPos + 1;
-      }else{
+      }
+      else
+      {
         int number = std::stoi(numberStr);
         sizes_.push_back(number);
         startPos = endPos + 1;
@@ -795,22 +800,26 @@ Tensor Tensor::reshape(const std::string &sizes){
     }
 
     std::string lastNumberStr = size_text.substr(startPos);
-    if (lastNumberStr[0] == '-') {
+    if (lastNumberStr[0] == '-')
+    {
       run_expect(!have_minus_one, "You cannot have two dimensions be -1");
-        have_minus_one = true;
-        minus_one_index = sizes_.size();
+      have_minus_one = true;
+      minus_one_index = sizes_.size();
     }
     int lastNumber = std::stoi(lastNumberStr);
     sizes_.push_back(lastNumber);
 
-    if (have_minus_one){
+    if (have_minus_one)
+    {
       int s = 1;
-      for (size_t i = 0; i < sizes_.size(); i++){
-        if (i != minus_one_index){
+      for (size_t i = 0; i < sizes_.size(); i++)
+      {
+        if (i != minus_one_index)
+        {
           s *= sizes_[i];
         }
       }
-      sizes_[minus_one_index] = (input->numel()/s);
+      sizes_[minus_one_index] = (input->numel() / s);
     }
 
     auto tf = reshape_without_grad(*input.get(), sizes_);
@@ -822,6 +831,32 @@ Tensor Tensor::reshape(const std::string &sizes){
     return tf;
   }
 
+  std::unique_ptr<TensorFrame> TensorFrame::transpose(const std::shared_ptr<TensorFrame> &input, int dim0, int dim1)
+  {
+    run_expect(dim0 >= 0, "dimension must greater than 0.");
+    run_expect(dim1 >= 0, "dimension must greater than 0.");
+    run_expect(dim0 < input.size().size(), "dimension must less than input.size().size().");
+    run_expect(dim1 < input.size().size(), "dimension must less than input.size().size().");
+    run_expect(dim0 != dim1, "dim0 and dim1 must be distinguished.");
+    SizeVec old_sizes = input.size();
+    SizeVec new_sizes = input.size();
+    new_sizes[dim0] = old_sizes[dim1];
+    new_sizes[dim1] = old_sizes[dim0];
+    size_t num_element = input.numel();
 
+    auto tf = TensorFrame::ones(new_sizes, input.type());
+    while (index_0[0] < old_sizes[0])
+    {
+      
+    }
+    
+  }
+
+  Tensor Tensor::transpose(const std::shared_ptr<TensorFrame> &input, int dim0, int dim1)
+  {
+    auto tf = TensorFrame::transpose(input.fptr, dim0, dim1);
+
+    return Tensor(tf);
+  }
 
 } // namespace INNC
