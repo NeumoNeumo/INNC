@@ -613,4 +613,36 @@ Tensor Tensor::operator[](const std::string &slice) {
   return Tensor((*this->fptr)[slice]);
 }
 
+std::unique_ptr<TensorFrame> INNC::TensorFrame::reshape_without_grad(const TensorFrame &input, const SizeVec &sizes){
+  size_t input_num = input.numel();
+  size_t output_num = 1;
+   for (auto i : sizes){
+    output_num *= i;
+  }
+  run_expect(input_num == output_num, "You're turning the tensor into an impossible shape.");
+  // Create a tensorframe of a given shape
+  auto tf = zeros(sizes, input.type()); 
+  for (size_t i = 0; i < input_num; i++){
+    *(tf.get()->data_.get() + tf.get()->offset + i * INNC::size_of(input.dtype)) = *(input.data_.get() + input.offset + i * INNC::size_of(input.dtype));
+  }
+  return tf;
+}
+
+Tensor Tensor::reshape(const Tensor &input, const SizeVec &sizes) {
+  auto tf = TensorFrame::reshape(input.fptr, sizes);
+  
+  return Tensor(tf);
+}
+
+std::unique_ptr<TensorFrame> INNC::TensorFrame::reshape(const std::shared_ptr<TensorFrame> &input, const SizeVec &sizes){
+  auto tf = reshape_without_grad(*input.get(), sizes);
+
+  if (!input.get()->requires_grad) return tf;
+  tf->requires_grad = true;
+  tf->grad_fn.reset(new ReshapeBack(tf.get(), {input}));
+  return tf;
+}
+
+
+
 } // namespace INNC

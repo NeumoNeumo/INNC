@@ -106,6 +106,23 @@ TEST(index, slice) {
   ASSERT_EQ(b.to_string(), "[]");
 }
 
+TEST(index, reshape){
+  // [[0, 1, 2],
+  //  [3, 4, 5],
+  //  [6, 7, 8],
+  //  [9,10,11]]
+  auto a = INNC::Tensor::from_blob(data_i16_2, {4, 3}, INNC::i16);
+  auto b = INNC::Tensor::reshape(a, {3, 4});
+  ASSERT_EQ(b.size().to_string(), "[3, 4]");
+  ASSERT_EQ(b.to_string(), "[[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]");
+  // std::cout << b.to_string();
+  b = INNC::Tensor::reshape(a, {3, 2, 2});
+  ASSERT_EQ(b.size().to_string(), "[3, 2, 2]");
+  b = INNC::Tensor::reshape(a, {12});
+  ASSERT_EQ(b.size().to_string(), "[12]");
+  // ASSERT_EQ(b.to_string(), "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]");
+}
+
 TEST(arithmetic, mul) {
   auto a = INNC::Tensor::from_blob(data_i8_1, {2, 3}, INNC::i8);
   auto b = INNC::Tensor::from_blob(data_i16_1, {2, 3}, INNC::i16);

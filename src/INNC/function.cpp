@@ -48,4 +48,13 @@ void SumBack::step_back() {
       *TensorFrame::ones_like(*input_tfs[0].get()).get());
 }
 
+ReshapeBack::ReshapeBack(
+    TensorFrame *this_tf,
+    const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
+    : Backward(this_tf, input_tfs){};
+
+void ReshapeBack::step_back() {
+  input_tfs[0]->try_accumulate_grad(*TensorFrame::reshape_without_grad(*input_tfs[0].get(), this_tf->sizes));
+}
+
 } // namespace INNC
