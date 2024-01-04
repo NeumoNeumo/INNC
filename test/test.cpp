@@ -152,6 +152,9 @@ TEST(index, transpose){
   a = INNC::Tensor::from_blob(data_i16_2, {2, 3, 2}, INNC::i16);
   b = INNC::Tensor::transpose(a, 0, 2);
   ASSERT_EQ(b.to_string(), "[[[0, 6], [2, 8], [4, 10]], [[1, 7], [3, 9], [5, 11]]]");
+  a = INNC::Tensor::from_blob(data_i8_1, {3,2}, INNC::i8).type(INNC::f64);
+  b = INNC::Tensor::transpose(a, 0, 1);
+  ASSERT_EQ(b.to_string(), "[["+ std::to_string(double(1)) +", "+ std::to_string(double(-5)) +", "+ std::to_string(double(-9)) +"], ["+ std::to_string(double(-3)) +", "+ std::to_string(double(7)) +", "+ std::to_string(double(11)) +"]]");
 }
 
 TEST(arithmetic, mul)
@@ -236,5 +239,19 @@ TEST(autograd, reshape)
   c.sum().backward();
   ASSERT_EQ(a.grad().to_string(), d.to_string());
   ASSERT_EQ(b.grad().to_string(), "["+ std::to_string(double(0)) +", "+ std::to_string(double(0)) +", "+ std::to_string(double(-2)) +", "+ std::to_string(double(-1)) +", "+ std::to_string(double(4)) +", "+ std::to_string(double(0)) +"]");
+  // ASSERT_EQ(d.grad().to_string(), a.to_string());
+}
+
+TEST(autograd, tranpose){
+  auto a = INNC::Tensor::from_blob(data_i16_1, {2,3}, INNC::i8).type(INNC::f64);
+  auto b = INNC::Tensor::from_blob(data_i8_1, {3,2}, INNC::i8).type(INNC::f64);
+  a.requires_grad(true);
+  b.requires_grad(true);
+  auto d = INNC::Tensor::transpose(b, 0, 1);
+  d.requires_grad(true);
+  auto c = a * d;
+  c.sum().backward();
+  ASSERT_EQ(a.grad().to_string(), d.to_string());
+  ASSERT_EQ(b.grad().to_string(), "[["+ std::to_string(double(0)) +", "+ std::to_string(double(-1)) +"], ["+ std::to_string(double(0)) +", "+ std::to_string(double(4)) +"], ["+ std::to_string(double(-2)) +", "+ std::to_string(double(0)) +"]]");
   // ASSERT_EQ(d.grad().to_string(), a.to_string());
 }

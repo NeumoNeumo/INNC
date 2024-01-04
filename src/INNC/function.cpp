@@ -57,4 +57,17 @@ void ReshapeBack::step_back() {
   input_tfs[0]->try_accumulate_grad(*TensorFrame::reshape_without_grad(*this_tf->grad.get(), input_tfs[0]->sizes));
 }
 
+TransposeBack::TransposeBack(
+    TensorFrame *this_tf,
+    const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
+    : Backward(this_tf, input_tfs){};
+
+void TransposeBack::step_back() {
+  SizeVec dim01;
+  for (size_t i = 0; i < this_tf->sizes.size(); i++){
+    if (input_tfs[0].get()->sizes[i] != this_tf->sizes[i]) dim01.push_back(i);
+  }
+  input_tfs[0]->try_accumulate_grad(*TensorFrame::transpose_without_grad(this_tf->grad, dim01[0], dim01[1]));
+}
+
 } // namespace INNC

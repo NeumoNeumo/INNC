@@ -843,7 +843,7 @@ namespace INNC
     return result;
   }
 
-  std::unique_ptr<TensorFrame> transpose_without_grad(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1){
+  std::unique_ptr<TensorFrame> TensorFrame::transpose_without_grad(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1){
     run_expect(dim0 >= 0, "dimension must greater than 0.");
     run_expect(dim1 >= 0, "dimension must greater than 0.");
     run_expect(dim0 < input.get()->sizes.size(), "dimension must less than input.size().size().");
@@ -864,7 +864,10 @@ namespace INNC
     auto tf = TensorFrame::ones(new_sizes, input.get()->type());
     for (size_t i = 0; i < element_num; i++)
     {
-      *(tf.get()->data_.get() + tf.get()->cnt_from_index(index_1) * INNC::size_of(input.get()->type())) = *(input.get()->data_.get() + input.get()->cnt_from_index(index_0) * INNC::size_of(input.get()->type()));
+      memcpy(tf.get()->data_.get() + tf.get()->offset + tf.get()->cnt_from_index(index_1) * INNC::size_of(input.get()->type()), 
+            input.get()->data_.get() + input.get()->offset + input.get()->cnt_from_index(index_0) * INNC::size_of(input.get()->type()),
+            INNC::size_of(input.get()->type())
+      );
       index_0[old_sizes.size() - 1]++;
       for (size_t j = 0; j < old_sizes.size() - 1; j++)
       {
@@ -883,7 +886,11 @@ namespace INNC
 
   std::unique_ptr<TensorFrame> TensorFrame::transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1)
   {
-    auto tf = transpose_without_grad(input, dim0, dim1);
+    auto tf = TensorFrame::transpose_without_grad(input, dim0, dim1);
+    if (!input.get()->requires_grad)
+      return tf;
+    tf->requires_grad = true;
+    tf->grad_fn.reset(new TransposeBack(tf.get(), {input}));
     return tf;
   }
 
