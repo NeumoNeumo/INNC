@@ -126,6 +126,8 @@ public:
   Tensor operator[](const std::string &slice);
   static Tensor reshape(const Tensor &input, const SizeVec &sizes);
   static Tensor reshape(const Tensor &input, const std::string &sizes);
+  Tensor reshape(const std::string &sizes);
+  Tensor reshape_as(const Tensor &input);
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;
   void requires_grad(bool b);

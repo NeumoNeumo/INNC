@@ -752,6 +752,14 @@ namespace INNC
     return Tensor(tf);
   }
 
+Tensor Tensor::reshape(const std::string &sizes){
+    return Tensor(TensorFrame::reshape(this->fptr, sizes));
+  }
+
+  Tensor Tensor::reshape_as(const Tensor &input){
+    return Tensor(TensorFrame::reshape(this->fptr, input.size()));
+  }
+
   std::unique_ptr<TensorFrame> INNC::TensorFrame::reshape(const std::shared_ptr<TensorFrame> &input, const std::string &sizes)
   {
     std::string size_text = sizes;
@@ -813,6 +821,7 @@ namespace INNC
     tf->grad_fn.reset(new ReshapeBack(tf.get(), {input}));
     return tf;
   }
+
 
 
 } // namespace INNC
