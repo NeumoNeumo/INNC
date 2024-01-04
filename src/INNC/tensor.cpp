@@ -856,7 +856,7 @@ namespace INNC
     new_sizes[dim1] = old_sizes[dim0];
     SizeVec index_0;
     SizeVec index_1;
-    size_t element_num = input.numel();
+    size_t element_num = input.get()->numel();
     for (size_t i = 0; i < old_sizes.size(); i++)
       index_0[i] = 0;
     index_1 = index_0;
@@ -865,7 +865,7 @@ namespace INNC
     auto tf = TensorFrame::ones(new_sizes, input.get()->type());
     for (size_t i = 0; i < element_num; i++)
     {
-      *(tf.get()->data_.get() + tf.get()->offset + cnt_from_index(index_1)) = *(input.get()->data_.get() + input.get()->offset + cnt_from_index(index_0));
+      *(tf.get()->data_.get() + tf.get()->offset + tf.get()->cnt_from_index(index_1)) = *(input.get()->data_.get() + input.get()->offset + input.get()->cnt_from_index(index_0));
       index_0[old_sizes.size() - 1]++;
       for (size_t j = 0; j < old_sizes.size() - 1; j++)
       {
