@@ -49,6 +49,7 @@ public:
   std::unique_ptr<TensorFrame> operator[](const std::string &slice);
   static std::unique_ptr<TensorFrame> reshape_without_grad(const TensorFrame &input, const SizeVec &sizes);
   static std::unique_ptr<TensorFrame> reshape(const std::shared_ptr<TensorFrame> &input, const SizeVec &sizes);
+  static std::unique_ptr<TensorFrame> reshape(const std::shared_ptr<TensorFrame> &input, const std::string &sizes);
   std::unique_ptr<TensorFrame> sum() const;
   void zero_grad() const noexcept;
   TensorFrame &operator+=(const TensorFrame &rhs);
@@ -124,6 +125,7 @@ public:
   Tensor type(types t);
   Tensor operator[](const std::string &slice);
   static Tensor reshape(const Tensor &input, const SizeVec &sizes);
+  static Tensor reshape(const Tensor &input, const std::string &sizes);
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;
   void requires_grad(bool b);
