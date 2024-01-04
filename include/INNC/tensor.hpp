@@ -47,6 +47,7 @@ public:
   INNC::types type() const;
   std::unique_ptr<TensorFrame> type(types t);
   std::unique_ptr<TensorFrame> operator[](const std::string &slice);
+  static std::unique_ptr<TensorFrame> transpose_without_grad(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1);
   static std::unique_ptr<TensorFrame> transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1);
   static std::unique_ptr<TensorFrame> reshape_without_grad(const TensorFrame &input, const SizeVec &sizes);
   static std::unique_ptr<TensorFrame> reshape(const std::shared_ptr<TensorFrame> &input, const SizeVec &sizes);

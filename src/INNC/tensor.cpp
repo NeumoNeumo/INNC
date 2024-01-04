@@ -843,8 +843,7 @@ namespace INNC
     return result;
   }
 
-  std::unique_ptr<TensorFrame> TensorFrame::transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1)
-  {
+  std::unique_ptr<TensorFrame> transpose_without_grad(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1){
     run_expect(dim0 >= 0, "dimension must greater than 0.");
     run_expect(dim1 >= 0, "dimension must greater than 0.");
     run_expect(dim0 < input.get()->sizes.size(), "dimension must less than input.size().size().");
@@ -879,6 +878,12 @@ namespace INNC
       index_1[dim0] = index_0[dim1];
       index_1[dim1] = index_0[dim0];
     }
+    return tf;
+  }
+
+  std::unique_ptr<TensorFrame> TensorFrame::transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1)
+  {
+    auto tf = transpose_without_grad(input, dim0, dim1);
     return tf;
   }
 
