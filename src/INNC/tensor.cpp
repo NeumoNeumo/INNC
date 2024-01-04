@@ -831,6 +831,18 @@ namespace INNC
     return tf;
   }
 
+  SizeVec cnt_to_index(size_t x, const SizeVec &sizes)
+  {
+    SizeVec result;
+    result.resize(sizes.size());
+    for (size_t i = 0; i < sizes.size(); i++)
+    {
+      result[sizes.size() - i - 1] = x % sizes[sizes.size() - i - 1];
+      x /= sizes[sizes.size() - i - 1];
+    }
+    return result;
+  }
+
   std::unique_ptr<TensorFrame> TensorFrame::transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1)
   {
     run_expect(dim0 >= 0, "dimension must greater than 0.");
@@ -842,11 +854,30 @@ namespace INNC
     SizeVec new_sizes = input.get()->sizes;
     new_sizes[dim0] = old_sizes[dim1];
     new_sizes[dim1] = old_sizes[dim0];
-    size_t num_element = input.get()->numel();
-
+    SizeVec index_0;
+    SizeVec index_1;
+    size_t element_num = input.numel();
+    for (size_t i = 0; i < old_sizes.size(); i++)
+      index_0[i] = 0;
+    index_1 = index_0;
+    index_1[dim0] = index_0[dim1];
+    index_1[dim1] = index_0[dim0];
     auto tf = TensorFrame::ones(new_sizes, input.get()->type());
-    for (size_t i = 0; i < num_element; i++){
-      
+    for (size_t i = 0; i < element_num; i++)
+    {
+      *(tf.get()->data_.get() + tf.get()->offset + cnt_from_index(index_1)) = *(input.get()->data_.get() + input.get()->offset + cnt_from_index(index_0));
+      index_0[old_sizes.size() - 1]++;
+      for (size_t j = 0; j < old_sizes.size() - 1; j++)
+      {
+        if (index_0[old_sizes.size() - j - 1] >= old_sizes[old_sizes.size() - j - 1])
+        {
+          index_0[old_sizes.size() - j - 1] -= old_sizes[old_sizes.size() - j - 1];
+          index_0[old_sizes.size() - j - 2]++;
+        }
+      }
+      index_1 = index_0;
+      index_1[dim0] = index_0[dim1];
+      index_1[dim1] = index_0[dim0];
     }
     return tf;
   }
