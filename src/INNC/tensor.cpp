@@ -831,28 +831,27 @@ namespace INNC
     return tf;
   }
 
-  std::unique_ptr<TensorFrame> TensorFrame::transpose(const std::shared_ptr<TensorFrame> &input, int dim0, int dim1)
+  std::unique_ptr<TensorFrame> TensorFrame::transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1)
   {
     run_expect(dim0 >= 0, "dimension must greater than 0.");
     run_expect(dim1 >= 0, "dimension must greater than 0.");
-    run_expect(dim0 < input.size().size(), "dimension must less than input.size().size().");
-    run_expect(dim1 < input.size().size(), "dimension must less than input.size().size().");
+    run_expect(dim0 < input.get()->sizes.size(), "dimension must less than input.size().size().");
+    run_expect(dim1 < input.get()->sizes.size(), "dimension must less than input.size().size().");
     run_expect(dim0 != dim1, "dim0 and dim1 must be distinguished.");
-    SizeVec old_sizes = input.size();
-    SizeVec new_sizes = input.size();
+    SizeVec old_sizes = input.get()->sizes;
+    SizeVec new_sizes = input.get()->sizes;
     new_sizes[dim0] = old_sizes[dim1];
     new_sizes[dim1] = old_sizes[dim0];
-    size_t num_element = input.numel();
+    size_t num_element = input.get()->numel();
 
-    auto tf = TensorFrame::ones(new_sizes, input.type());
-    while (index_0[0] < old_sizes[0])
-    {
+    auto tf = TensorFrame::ones(new_sizes, input.get()->type());
+    for (size_t i = 0; i < num_element; i++){
       
     }
-    
+    return tf;
   }
 
-  Tensor Tensor::transpose(const std::shared_ptr<TensorFrame> &input, int dim0, int dim1)
+  Tensor Tensor::transpose(const Tensor &input, size_t dim0, size_t dim1)
   {
     auto tf = TensorFrame::transpose(input.fptr, dim0, dim1);
 

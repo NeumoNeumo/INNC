@@ -132,12 +132,13 @@ TEST(index, reshape)
   a = INNC::Tensor::ones({4, 3}, INNC::f32);
   b = INNC::Tensor::reshape(a, "[3, 4]");
   ASSERT_EQ(b.size().to_string(), "[3, 4]");
-  ASSERT_EQ(b.to_string(), "[["+ std::to_string(1.0) +", 1.000000, 1.000000, 1.000000], [1.000000, 1.000000, 1.000000, 1.000000], [1.000000, 1.000000, 1.000000, 1.000000]]");
+  std::string f32_one_str = std::to_string(double(1));
+  ASSERT_EQ(b.to_string(), "[["+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +"], ["+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +"], ["+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +"]]");
   b = a.reshape("[2, 6]");
   ASSERT_EQ(b.size().to_string(), "[2, 6]");
-  ASSERT_EQ(b.to_string(), "[[1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000], [1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000]]");
+  ASSERT_EQ(b.to_string(), "[["+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +"], ["+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +", "+ f32_one_str +"]]");
   b = a.reshape_as(INNC::Tensor::ones({6,2}, INNC::f32));
-  ASSERT_EQ(b.to_string(), "[[1.000000, 1.000000], [1.000000, 1.000000], [1.000000, 1.000000], [1.000000, 1.000000], [1.000000, 1.000000], [1.000000, 1.000000]]");
+  ASSERT_EQ(b.to_string(), "[["+ f32_one_str +", "+ f32_one_str +"], ["+ f32_one_str +", "+ f32_one_str +"], ["+ f32_one_str +", "+ f32_one_str +"], ["+ f32_one_str +", "+ f32_one_str +"], ["+ f32_one_str +", "+ f32_one_str +"], ["+ f32_one_str +", "+ f32_one_str +"]]");
 
 }
 
@@ -222,6 +223,6 @@ TEST(autograd, reshape)
   auto c = a * d;
   c.sum().backward();
   ASSERT_EQ(a.grad().to_string(), d.to_string());
-  ASSERT_EQ(b.grad().to_string(), "[0.000000, 0.000000, -2.000000, -1.000000, 4.000000, 0.000000]");
+  ASSERT_EQ(b.grad().to_string(), "["+ std::to_string(double(0)) +", "+ std::to_string(double(0)) +", "+ std::to_string(double(-2)) +", "+ std::to_string(double(-1)) +", "+ std::to_string(double(4)) +", "+ std::to_string(double(0)) +"]");
   // ASSERT_EQ(d.grad().to_string(), a.to_string());
 }
