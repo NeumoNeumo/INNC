@@ -858,14 +858,14 @@ namespace INNC
     SizeVec index_1;
     size_t element_num = input.get()->numel();
     for (size_t i = 0; i < old_sizes.size(); i++)
-      index_0[i] = 0;
+      index_0.push_back(0);
     index_1 = index_0;
     index_1[dim0] = index_0[dim1];
     index_1[dim1] = index_0[dim0];
     auto tf = TensorFrame::ones(new_sizes, input.get()->type());
     for (size_t i = 0; i < element_num; i++)
     {
-      *(tf.get()->data_.get() + tf.get()->offset + tf.get()->cnt_from_index(index_1)) = *(input.get()->data_.get() + input.get()->offset + input.get()->cnt_from_index(index_0));
+      *(tf.get()->data_.get() + tf.get()->cnt_from_index(index_1) * INNC::size_of(input.get()->type())) = *(input.get()->data_.get() + input.get()->cnt_from_index(index_0) * INNC::size_of(input.get()->type()));
       index_0[old_sizes.size() - 1]++;
       for (size_t j = 0; j < old_sizes.size() - 1; j++)
       {

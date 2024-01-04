@@ -142,6 +142,18 @@ TEST(index, reshape)
 
 }
 
+TEST(index, transpose){
+  auto a = INNC::Tensor::from_blob(data_i16_2, {4, 3}, INNC::i16);
+  auto b = INNC::Tensor::transpose(a, 0, 1);
+  ASSERT_EQ(b.to_string(), "[[0, 3, 6, 9], [1, 4, 7, 10], [2, 5, 8, 11]]");
+  a = INNC::Tensor::from_blob(data_i8_1, {2, 3}, INNC::i8);
+  b = INNC::Tensor::transpose(a, 0, 1);
+  ASSERT_EQ(b.to_string(), "[[1, 7], [-3, -9], [-5, 11]]");
+  a = INNC::Tensor::from_blob(data_i16_2, {2, 3, 2}, INNC::i16);
+  b = INNC::Tensor::transpose(a, 0, 2);
+  ASSERT_EQ(b.to_string(), "[[[0, 6], [2, 8], [4, 10]], [[1, 7], [3, 9], [5, 11]]]");
+}
+
 TEST(arithmetic, mul)
 {
   auto a = INNC::Tensor::from_blob(data_i8_1, {2, 3}, INNC::i8);
