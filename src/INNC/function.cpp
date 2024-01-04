@@ -54,7 +54,7 @@ ReshapeBack::ReshapeBack(
     : Backward(this_tf, input_tfs){};
 
 void ReshapeBack::step_back() {
-  input_tfs[0]->try_accumulate_grad(*TensorFrame::reshape_without_grad(*input_tfs[0].get(), this_tf->sizes));
+  input_tfs[0]->try_accumulate_grad(*TensorFrame::reshape_without_grad(*this_tf->grad.get(), input_tfs[0]->sizes));
 }
 
 } // namespace INNC

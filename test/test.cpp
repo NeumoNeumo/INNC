@@ -129,6 +129,10 @@ TEST(index, reshape)
   b = INNC::Tensor::reshape(a, "[3, -1]");
   ASSERT_EQ(b.size().to_string(), "[3, 4]");
   ASSERT_EQ(b.to_string(), "[[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]");
+  a = INNC::Tensor::ones({4, 3}, INNC::f32);
+  b = INNC::Tensor::reshape(a, "[3, 4]");
+  ASSERT_EQ(b.size().to_string(), "[3, 4]");
+  ASSERT_EQ(b.to_string(), "[[1.000000, 1.000000, 1.000000, 1.000000], [1.000000, 1.000000, 1.000000, 1.000000], [1.000000, 1.000000, 1.000000, 1.000000]]");
 }
 
 TEST(arithmetic, mul)
@@ -198,4 +202,20 @@ TEST(autograd, mul)
   c.sum().backward();
   ASSERT_EQ(a.grad().to_string(), b.to_string());
   ASSERT_EQ(b.grad().to_string(), a.to_string());
+}
+
+TEST(autograd, reshape)
+{
+  auto a = INNC::Tensor::from_blob(data_i16_1, {2,3}, INNC::i8).type(INNC::f64);
+  auto b = INNC::Tensor::from_blob(data_i8_1, {6}, INNC::i8).type(INNC::f64);
+  a.requires_grad(true);
+  b.requires_grad(true);
+  auto d = INNC::Tensor::reshape(b, "[2, 3]");
+  d.requires_grad(true);
+  
+  auto c = a * d;
+  c.sum().backward();
+  ASSERT_EQ(a.grad().to_string(), d.to_string());
+  ASSERT_EQ(b.grad().to_string(), "[0.000000, 0.000000, -2.000000, -1.000000, 4.000000, 0.000000]");
+  // ASSERT_EQ(d.grad().to_string(), a.to_string());
 }

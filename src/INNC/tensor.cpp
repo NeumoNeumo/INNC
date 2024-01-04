@@ -716,11 +716,8 @@ namespace INNC
 
     run_expect(input_num == output_num, "You're turning the tensor into an impossible shape.");
     // Create a tensorframe of a given shape
-    auto tf = zeros(sizes, input.type());
-    for (size_t i = 0; i < input_num; i++)
-    {
-      *(tf.get()->data_.get() + tf.get()->offset + i * INNC::size_of(input.dtype)) = *(input.data_.get() + input.offset + i * INNC::size_of(input.dtype));
-    }
+    auto tf = TensorFrame::ones(sizes, input.type());
+    std::memcpy(tf.get()->data_.get() + tf.get()->offset, input.data_.get() + input.offset, output_num * size_of(input.type()));
     return tf;
   }
 
@@ -775,7 +772,6 @@ namespace INNC
     {
       std::string numberStr = size_text.substr(startPos, endPos - startPos);
 
-      std::cout << numberStr << std::endl;
       if (numberStr[0] == '-'){
         run_expect(!have_minus_one, "You cannot have two dimensions be -1");
         have_minus_one = true;
@@ -798,7 +794,6 @@ namespace INNC
     }
     int lastNumber = std::stoi(lastNumberStr);
     sizes_.push_back(lastNumber);
-    std::cout << minus_one_index << " " << sizes_ << std::endl;
 
     if (have_minus_one){
       int s = 1;
@@ -809,7 +804,6 @@ namespace INNC
       }
       sizes_[minus_one_index] = (input->numel()/s);
     }
-    std::cout << sizes_ << std::endl;
 
     auto tf = reshape_without_grad(*input.get(), sizes_);
 
