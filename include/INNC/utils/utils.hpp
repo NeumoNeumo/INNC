@@ -16,7 +16,9 @@ std::string sformat(const std::string &format, Args... args) {
   auto size = static_cast<size_t>(size_s);
   char *buf = new char[size];
   std::snprintf(buf, size, format.c_str(), args...);
-  return std::string(buf, buf + size - 1);
+  auto ret = std::string(buf, buf + size - 1);
+  delete[] buf;
+  return ret;
 }
 
 static const char *ws = " \t\n\r\f\v";

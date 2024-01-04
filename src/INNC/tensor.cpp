@@ -1,65 +1,15 @@
 #include "INNC/tensor.hpp"
+#include "INNC/dispatcher.hpp"
 #include "INNC/exceptions.hpp"
 #include "INNC/function.hpp"
 #include "INNC/storage.hpp"
 #include "INNC/types.hpp"
+#include "INNC/utils/traits.hpp"
 #include "INNC/utils/utils.hpp"
 #include <cstring>
 #include <queue>
 
 namespace INNC {
-
-#define generate_unary_op_list(op)                                             \
-  class op##_helper {                                                          \
-  public:                                                                      \
-    constexpr static void (*spec_list[types::Count][types::Count])(            \
-        TensorFrame * to, TensorFrame *from) = {                               \
-        {op<std::int8_t, std::int8_t>, op<std::int8_t, std::int16_t>,          \
-         op<std::int8_t, std::int32_t>, op<std::int8_t, std::int64_t>,         \
-         op<std::int8_t, float>, op<std::int8_t, double>},                     \
-        {op<std::int16_t, std::int8_t>, op<std::int16_t, std::int16_t>,        \
-         op<std::int16_t, std::int32_t>, op<std::int16_t, std::int64_t>,       \
-         op<std::int16_t, float>, op<std::int16_t, double>},                   \
-        {op<std::int32_t, std::int8_t>, op<std::int32_t, std::int16_t>,        \
-         op<std::int32_t, std::int32_t>, op<std::int32_t, std::int64_t>,       \
-         op<std::int32_t, float>, op<std::int32_t, double>},                   \
-        {op<std::int64_t, std::int8_t>, op<std::int64_t, std::int16_t>,        \
-         op<std::int64_t, std::int32_t>, op<std::int64_t, std::int64_t>,       \
-         op<std::int64_t, float>, op<std::int64_t, double>},                   \
-        {op<float, std::int8_t>, op<float, std::int16_t>,                      \
-         op<float, std::int32_t>, op<float, std::int64_t>, op<float, float>,   \
-         op<float, double>},                                                   \
-        {op<double, std::int8_t>, op<double, std::int16_t>,                    \
-         op<double, std::int32_t>, op<double, std::int64_t>,                   \
-         op<double, float>, op<double, double>}};                              \
-  }
-
-// the type on the left would be the type of the return value
-#define generate_binary_op_list(op)                                            \
-  class op##_helper {                                                          \
-  public:                                                                      \
-    constexpr static void (*spec_list[types::Count][types::Count])(            \
-        TensorFrame * dst, TensorFrame *l, TensorFrame *r) = {                 \
-        {op<std::int8_t, std::int8_t>, op<std::int8_t, std::int16_t>,          \
-         op<std::int8_t, std::int32_t>, op<std::int8_t, std::int64_t>,         \
-         op<std::int8_t, float>, op<std::int8_t, double>},                     \
-        {op<std::int16_t, std::int8_t>, op<std::int16_t, std::int16_t>,        \
-         op<std::int16_t, std::int32_t>, op<std::int16_t, std::int64_t>,       \
-         op<std::int16_t, float>, op<std::int16_t, double>},                   \
-        {op<std::int32_t, std::int8_t>, op<std::int32_t, std::int16_t>,        \
-         op<std::int32_t, std::int32_t>, op<std::int32_t, std::int64_t>,       \
-         op<std::int32_t, float>, op<std::int32_t, double>},                   \
-        {op<std::int64_t, std::int8_t>, op<std::int64_t, std::int16_t>,        \
-         op<std::int64_t, std::int32_t>, op<std::int64_t, std::int64_t>,       \
-         op<std::int64_t, float>, op<std::int64_t, double>},                   \
-        {op<float, std::int8_t>, op<float, std::int16_t>,                      \
-         op<float, std::int32_t>, op<float, std::int64_t>, op<float, float>,   \
-         op<float, double>},                                                   \
-        {op<double, std::int8_t>, op<double, std::int16_t>,                    \
-         op<double, std::int32_t>, op<double, std::int64_t>,                   \
-         op<double, float>, op<double, double>}};                              \
-  }
-
 size_t TensorFrame::cnt_from_index(const SizeVec &index) const noexcept {
   assertm(index.size() == this->sizes.size(), "index mismatches sizes");
   size_t pos = this->offset;
@@ -211,18 +161,28 @@ void tensor_sum(TensorFrame *todata, TensorFrame *fromdata) {
   }
 }
 
-generate_binary_op_list(tensor_add);
-generate_binary_op_list(tensor_mul);
-generate_unary_op_list(tensor_fill);
-generate_unary_op_list(tensor_to_type);
-generate_unary_op_list(tensor_sum);
+template <typename D, typename L, typename R>
+void tensor_mul_acc_f(TensorFrame *dst, TensorFrame *l, TensorFrame *r) {
+  for_each_sizevec(dst->sizes, [=](const SizeVec &sv) {
+    *(reinterpret_cast<D *>(dst->data_.get()) + dst->cnt_from_index(sv)) +=
+        *(reinterpret_cast<L *>(l->data_.get()) + l->cnt_from_index(sv)) *
+        *(reinterpret_cast<R *>(r->data_.get()) + r->cnt_from_index(sv));
+  });
+}
+
+generate_binary_op_helper(tensor_add);
+generate_binary_op_helper(tensor_mul);
+generate_unary_op_helper(tensor_fill);
+generate_unary_op_helper(tensor_to_type);
+generate_unary_op_helper(tensor_sum);
+generate_ffi_op_helper(tensor_mul_acc_f);
 
 std::unique_ptr<TensorFrame> TensorFrame::ones(const SizeVec &sizes,
                                                types dtype) {
   auto ret = make_tf(dtype, sizes);
   auto one_ = TensorFrame::make_tf(i8, SizeVec{1});
   *one_->data_.get() = 1;
-  tensor_fill_helper::spec_list[dtype][i8](ret.get(), one_.get());
+  tensor_fill_helper::dispatch(dtype, i8)(ret.get(), one_.get());
   return ret;
 }
 
@@ -270,25 +230,50 @@ TensorFrame &TensorFrame::operator+=(const TensorFrame &rhs) {
   run_expect(
       !requires_grad,
       "This inplace operation cannot perform on a tensor that requires grad.");
-  tensor_add_helper::spec_list[dtype][rhs.dtype](
+  tensor_add_helper::dispatch(dtype, rhs.dtype)(
       this, this, const_cast<TensorFrame *>(&rhs));
   return *this;
 }
 
+template <typename T> struct is_valid_op_h_ {
+  static constexpr size_t param_n = get_param_n<T>();
+  static constexpr bool value =
+      is_valid_func_h_<T, TensorFrame *, void, param_n>();
+};
+
+template <typename T> consteval bool is_valid_forward_func_() {
+  using func_t = decltype(T::dispatch);
+  constexpr size_t k = get_param_n<func_t>();
+  return is_valid_func_h_<func_t, INNC::types, is_valid_op_h_, k>();
+}
+
 template <typename ForwardType>
+concept is_valid_forward = is_valid_forward_func_<ForwardType>();
+
+template <typename ForwardType>
+  requires is_valid_forward<ForwardType>
 std::unique_ptr<TensorFrame> apply_no_grad_binary_op(TensorFrame &lhs,
                                                      TensorFrame &rhs) {
   types lt = INNC::larger_type(lhs.dtype, rhs.dtype);
   auto ret = TensorFrame::make_tf(lt, lhs.sizes);
   if (lhs.dtype == lt) {
-    ForwardType::spec_list[lhs.dtype][rhs.dtype](ret.get(), &lhs, &rhs);
+    ForwardType::dispatch(lhs.dtype, rhs.dtype)(ret.get(), &lhs, &rhs);
   } else {
-    ForwardType::spec_list[rhs.dtype][lhs.dtype](ret.get(), &rhs, &lhs);
+    ForwardType::dispatch(rhs.dtype, lhs.dtype)(ret.get(), &rhs, &lhs);
   }
   return ret;
 }
 
+template <typename ForwardType>
+  requires is_valid_forward<ForwardType>
+void apply_no_grad_binary_op(TensorFrame &dst, TensorFrame &lhs,
+                             TensorFrame &rhs) {
+  ForwardType::dispatch(dst.dtype, lhs.dtype, rhs.dtype)(&dst, &lhs, &rhs);
+}
+
 template <typename ForwardType, typename BackwardType>
+  requires is_valid_forward<ForwardType> &&
+           std::derived_from<BackwardType, Backward>
 std::unique_ptr<TensorFrame>
 apply_binary_operator(const std::shared_ptr<TensorFrame> &lhs,
                       const std::shared_ptr<TensorFrame> &rhs) {
@@ -314,18 +299,27 @@ inline INNC::types TensorFrame::type() const { return this->dtype; }
 
 std::unique_ptr<TensorFrame> TensorFrame::type(types t) {
   auto tf = make_tf(t, sizes);
-  tensor_to_type_helper::spec_list[t][dtype](tf.get(), this);
+  tensor_to_type_helper::dispatch(t, dtype)(tf.get(), this);
   return tf;
 }
 
-void TensorFrame::try_accumulate_grad(TensorFrame &tf) {
+void tensor_mul_add(TensorFrame &dst, TensorFrame &tf1, TensorFrame &tf2) {
+  apply_no_grad_binary_op<tensor_mul_acc_f_helper>(dst, tf1, tf2);
+}
+
+void TensorFrame::try_accumulate_grad(TensorFrame *tf_w, TensorFrame *tf_o) {
   if (!requires_grad)
     return;
   if (grad_fn.get() != nullptr)
     ++grad_fn->accumulated_n_outway;
   if (grad.get() == nullptr)
     grad = TensorFrame::zeros_like(*this);
-  *grad += tf;
+  if (tf_o == nullptr)
+    *grad += *tf_w;
+  else if (is_float(tf_w->type()))
+    tensor_mul_add(*grad.get(), *tf_w, *tf_o);
+  else
+    tensor_mul_add(*grad.get(), *tf_o, *tf_w);
 }
 
 void refresh_n_outway(TensorFrame *tf) {
@@ -465,8 +459,6 @@ void Tensor::requires_grad(bool b) {
   if (b)
     run_expect(fptr->type() == f32 || fptr->type() == f64,
                "Only matrices of floating point number can require grad");
-  if (!b)
-    fptr.reset();
   fptr->requires_grad = b;
 }
 
@@ -486,8 +478,8 @@ std::unique_ptr<TensorFrame> TensorFrame::sum() const {
   else
     dst_t = f64;
   auto tf = zeros(SizeVec{1}, dst_t);
-  tensor_sum_helper::spec_list[dst_t][dtype](tf.get(),
-                                             const_cast<TensorFrame *>(this));
+  tensor_sum_helper::dispatch(dst_t, dtype)(tf.get(),
+                                            const_cast<TensorFrame *>(this));
   return tf;
 }
 
@@ -525,7 +517,7 @@ std::unique_ptr<TensorFrame> TensorFrame::operator[](const std::string &slice) {
     } else
       split_slice = {"", "", ""};
     if (split_slice.size() == 1) { // like a[-2]
-      long long idx = std::stoi(split_slice[0]);
+      long long idx = std::stoll(split_slice[0]);
       if (idx < 0)
         idx += sizes[dim];
       run_expect(
