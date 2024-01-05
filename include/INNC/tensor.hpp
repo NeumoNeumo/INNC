@@ -50,6 +50,8 @@ public:
   std::unique_ptr<TensorFrame> operator[](const std::string &slice);
   std::unique_ptr<TensorFrame> sum() const;
   void zero_grad() const noexcept;
+  std::unique_ptr<TensorFrame> neg() const;
+  std::unique_ptr<TensorFrame> square() const;
   TensorFrame &operator+=(const TensorFrame &rhs);
   void try_accumulate_grad(TensorFrame *tf_w, TensorFrame *tf_o = nullptr);
   friend std::unique_ptr<TensorFrame> no_grad_add(const TensorFrame &lhs,

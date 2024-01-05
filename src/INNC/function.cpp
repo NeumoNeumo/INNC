@@ -17,7 +17,6 @@ Backward::Backward(
 Backward::~Backward() = default;
 
 TensorFrame &Backward::get_out_grad() { return *this_tf->grad.get(); }
-
 AddBack::AddBack(
     TensorFrame *this_tf,
     const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
@@ -37,6 +36,18 @@ void MulBack::step_back() {
   input_tfs[0]->try_accumulate_grad(input_tfs[1].get(), &get_out_grad());
   input_tfs[1]->try_accumulate_grad(input_tfs[0].get(), &get_out_grad());
 }
+
+class SubBack : public Backward {
+public:
+    SubBack(TensorFrame *this_tf, const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
+        : Backward(this_tf, input_tfs) {}
+
+    void step_back() override {
+        input_tfs[0]->try_accumulate_grad(&get_out_grad());
+        auto neg_out_grad = get_out_grad().neg(); 
+        input_tfs[1]->try_accumulate_grad(neg_out_grad.get());
+    }
+};
 
 SumBack::SumBack(
     TensorFrame *this_tf,

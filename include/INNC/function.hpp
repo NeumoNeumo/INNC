@@ -39,6 +39,20 @@ public:
   void step_back() override;
 };
 
+class SubBack : public Backward {
+public:
+  SubBack(TensorFrame *this_tf,
+          const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
+  void step_back() override;
+};
+
+class DivBack : public Backward {
+public:
+  DivBack(TensorFrame *this_tf,
+          const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
+  void step_back() override;
+};
+
 class SumBack : public Backward {
 public:
   SumBack(TensorFrame *this_tf,
