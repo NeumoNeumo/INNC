@@ -5,6 +5,27 @@
 #include <vector>
 
 namespace INNC {
+
+std::string innc_type_to_string(NumericType auto num, types t) {
+  switch (t) {
+  case i8:
+    return std::to_string(*static_cast<std::int8_t *>(num));
+  case i16:
+    return std::to_string(*static_cast<std::int16_t *>(num));
+  case i32:
+    return std::to_string(*static_cast<std::int32_t *>(num));
+  case i64:
+    return std::to_string(*static_cast<std::int64_t *>(num));
+  case f32:
+    return std::to_string(*static_cast<float *>(num));
+  case f64:
+    return std::to_string(*static_cast<double *>(num));
+  default:
+    std::cerr << "type not available" << std::endl;
+    abort();
+  }
+}
+
 std::string innc_type_to_string(void *ptr, types t) {
   switch (t) {
   case i8:
@@ -24,6 +45,7 @@ std::string innc_type_to_string(void *ptr, types t) {
     abort();
   }
 }
+
 std::ostream &operator<<(std::ostream &o, const SizeVec &sv) noexcept {
   return o << sv.to_string();
 }

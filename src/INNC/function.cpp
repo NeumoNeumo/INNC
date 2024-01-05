@@ -24,8 +24,8 @@ AddBack::AddBack(
     : Backward(this_tf, input_tfs){};
 
 void AddBack::step_back() {
-  input_tfs[0]->try_accumulate_grad(*this_tf->grad.get());
-  input_tfs[1]->try_accumulate_grad(*this_tf->grad.get());
+  input_tfs[0]->try_accumulate_grad(&get_out_grad());
+  input_tfs[1]->try_accumulate_grad(&get_out_grad());
 }
 
 MulBack::MulBack(
@@ -34,8 +34,8 @@ MulBack::MulBack(
     : Backward(this_tf, input_tfs){};
 
 void MulBack::step_back() {
-  input_tfs[0]->try_accumulate_grad(*input_tfs[1].get());
-  input_tfs[1]->try_accumulate_grad(*input_tfs[0].get());
+  input_tfs[0]->try_accumulate_grad(input_tfs[1].get(), &get_out_grad());
+  input_tfs[1]->try_accumulate_grad(input_tfs[0].get(), &get_out_grad());
 }
 
 SumBack::SumBack(
@@ -45,7 +45,7 @@ SumBack::SumBack(
 
 void SumBack::step_back() {
   input_tfs[0]->try_accumulate_grad(
-      *TensorFrame::ones_like(*input_tfs[0].get()).get());
+      TensorFrame::ones_like(*input_tfs[0].get()).get());
 }
 
 ReshapeBack::ReshapeBack(

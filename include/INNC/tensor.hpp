@@ -33,6 +33,7 @@ public:
   TensorFrame(types dtype, const SizeVec &sizes, const SizeVec &strides,
               const size_t offset, bool prealloc = true);
   ~TensorFrame();
+  static TensorFrame make_stub();
   std::string to_string() const;
   static std::unique_ptr<TensorFrame>
   make_tf(types dtype, is_same_wo_cvref<SizeVec> auto &&sizes);
@@ -63,7 +64,7 @@ public:
   std::unique_ptr<TensorFrame> sum() const;
   void zero_grad() const noexcept;
   TensorFrame &operator+=(const TensorFrame &rhs);
-  void try_accumulate_grad(TensorFrame &tf);
+  void try_accumulate_grad(TensorFrame *tf_w, TensorFrame *tf_o = nullptr);
   friend std::unique_ptr<TensorFrame> no_grad_add(const TensorFrame &lhs,
                                                   const TensorFrame &rhs);
   friend void check_same_size(const TensorFrame &lhs, const TensorFrame &rhs);

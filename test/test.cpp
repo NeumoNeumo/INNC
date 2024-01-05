@@ -1,4 +1,5 @@
 #include "INNC/INNC.hpp"
+#include "INNC/utils/utils.hpp"
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <iostream>
@@ -104,6 +105,8 @@ TEST(index, slice) {
   b = a[":3:-2,2:1:2"];
   ASSERT_EQ(b.size().to_string(), "[0, 0]");
   ASSERT_EQ(b.to_string(), "[]");
+  ASSERT_THROW(a[" - 1, 2"], std::invalid_argument);
+  ASSERT_THROW(a["99"], std::runtime_error);
 }
 
 TEST(index, reshape) {
@@ -234,6 +237,22 @@ TEST(autograd, mul) {
   c.sum().backward();
   ASSERT_EQ(a.grad().to_string(), b.to_string());
   ASSERT_EQ(b.grad().to_string(), a.to_string());
+  a.zero_grad();
+  c = a * a;
+  c.sum().backward();
+  ASSERT_EQ(a.grad().to_string(), (a + a).to_string());
+  a.zero_grad();
+  b.requires_grad(false);
+  (a * (a * b) * b).sum().backward();
+  ASSERT_EQ(a.grad().to_string(), ((a + a) * b * b).to_string());
+  a.zero_grad();
+  b = INNC::Tensor::from_blob(data_i8_1, {2, 3}, INNC::i8);
+  (a * b).sum().backward();
+  ASSERT_EQ(a.grad().to_string(), b.type(a.type()).to_string());
+}
+
+TEST(utils, utils) {
+  ASSERT_THROW(INNC::sformat("%ls", "123"), std::runtime_error);
 }
 
 TEST(autograd, reshape) {
