@@ -312,8 +312,9 @@ void TensorFrame::try_accumulate_grad(TensorFrame *tf_w, TensorFrame *tf_o) {
     return;
   if (grad_fn.get() != nullptr)
     ++grad_fn->accumulated_n_outway;
-  if (grad.get() == nullptr)
+  if (grad.get() == nullptr) {
     grad = TensorFrame::zeros_like(*this);
+  }
   if (tf_o == nullptr)
     *grad += *tf_w;
   else if (is_float(tf_w->type()))
@@ -694,66 +695,42 @@ SizeVec cnt_to_index(size_t x, const SizeVec &sizes) {
 }
 
 std::unique_ptr<TensorFrame>
-TensorFrame::transpose_without_grad(const std::shared_ptr<TensorFrame> &input,
-                                    size_t dim0, size_t dim1) {
-  run_expect(dim0 >= 0, "dimension must greater than 0.");
-  run_expect(dim1 >= 0, "dimension must greater than 0.");
-  run_expect(dim0 < input.get()->sizes.size(),
-             "dimension must less than input.size().size().");
-  run_expect(dim1 < input.get()->sizes.size(),
-             "dimension must less than input.size().size().");
-  run_expect(dim0 != dim1, "dim0 and dim1 must be distinguished.");
-  SizeVec old_sizes = input.get()->sizes;
-  SizeVec new_sizes = input.get()->sizes;
-  new_sizes[dim0] = old_sizes[dim1];
-  new_sizes[dim1] = old_sizes[dim0];
-  SizeVec index_0;
-  SizeVec index_1;
-  size_t element_num = input.get()->numel();
-  for (size_t i = 0; i < old_sizes.size(); i++)
-    index_0.push_back(0);
-  index_1 = index_0;
-  index_1[dim0] = index_0[dim1];
-  index_1[dim1] = index_0[dim0];
-  auto tf = TensorFrame::ones(new_sizes, input.get()->type());
-  for (size_t i = 0; i < element_num; i++) {
-    memcpy(tf.get()->data_.get() + tf.get()->offset +
-               tf.get()->cnt_from_index(index_1) *
-                   INNC::size_of(input.get()->type()),
-           input.get()->data_.get() + input.get()->offset +
-               input.get()->cnt_from_index(index_0) *
-                   INNC::size_of(input.get()->type()),
-           INNC::size_of(input.get()->type()));
-    index_0[old_sizes.size() - 1]++;
-    for (size_t j = 0; j < old_sizes.size() - 1; j++) {
-      if (index_0[old_sizes.size() - j - 1] >=
-          old_sizes[old_sizes.size() - j - 1]) {
-        index_0[old_sizes.size() - j - 1] -=
-            old_sizes[old_sizes.size() - j - 1];
-        index_0[old_sizes.size() - j - 2]++;
-      }
-    }
-    index_1 = index_0;
-    index_1[dim0] = index_0[dim1];
-    index_1[dim1] = index_0[dim0];
-  }
-  return tf;
-}
-
-std::unique_ptr<TensorFrame>
 TensorFrame::transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0,
                        size_t dim1) {
-  auto tf = TensorFrame::transpose_without_grad(input, dim0, dim1);
+  run_expect(dim0 >= 0 && dim1 >= 0 && dim0 < input->sizes.size() &&
+                 dim1 < input.get()->sizes.size(),
+             sformat("Index out of range dimension %lu. Actual input of "
+                     "transpose: (%lu, %lu)",
+                     input->sizes.size(), dim0, dim1));
+  run_expect(
+      dim0 != dim1,
+      sformat("dim0 and dim1 must be distinguished. But they are both %lu.",
+              dim0));
+  SizeVec _sizes = input->sizes;
+  SizeVec _strides = input->strides;
+  std::swap(_sizes[dim0], _sizes[dim1]);
+  std::swap(_strides[dim0], _strides[dim1]);
+  auto tf = std::make_unique<TensorFrame>(input->dtype, _sizes, _strides,
+                                          input->offset, false);
+  tf->data_ = input->data_;
+  tf->grad = input->grad;
   if (!input.get()->requires_grad)
     return tf;
   tf->requires_grad = true;
-  tf->grad_fn.reset(new TransposeBack(tf.get(), {input}));
+  auto back = new TransposeBack(tf.get(), {input});
+  back->index[0] = dim0;
+  back->index[1] = dim1;
+  tf->grad_fn.reset(back);
   return tf;
 }
 
 Tensor Tensor::transpose(const Tensor &input, size_t dim0, size_t dim1) {
   auto tf = TensorFrame::transpose(input.fptr, dim0, dim1);
+  return Tensor(tf);
+}
 
+Tensor Tensor::transpose(size_t dim0, size_t dim1) {
+  auto tf = TensorFrame::transpose(fptr, dim0, dim1);
   return Tensor(tf);
 }
 

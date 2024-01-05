@@ -49,9 +49,6 @@ public:
   std::unique_ptr<TensorFrame> type(types t);
   std::unique_ptr<TensorFrame> operator[](const std::string &slice);
   static std::unique_ptr<TensorFrame>
-  transpose_without_grad(const std::shared_ptr<TensorFrame> &input, size_t dim0,
-                         size_t dim1);
-  static std::unique_ptr<TensorFrame>
   transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0,
             size_t dim1);
   static std::unique_ptr<TensorFrame>
@@ -136,6 +133,8 @@ public:
   Tensor type(types t);
   Tensor operator[](const std::string &slice);
   static Tensor transpose(const Tensor &input, size_t dim0, size_t dim1);
+  Tensor transpose(size_t dim0, size_t dim1);
+  // TODO 1 member function transpose
   static Tensor reshape(const Tensor &input,
                         const std::initializer_list<int> &sizes);
   Tensor reshape(const std::initializer_list<int> &sizes);
