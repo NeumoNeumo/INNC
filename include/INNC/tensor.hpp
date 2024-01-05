@@ -47,11 +47,19 @@ public:
   INNC::types type() const;
   std::unique_ptr<TensorFrame> type(types t);
   std::unique_ptr<TensorFrame> operator[](const std::string &slice);
-  static std::unique_ptr<TensorFrame> transpose_without_grad(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1);
-  static std::unique_ptr<TensorFrame> transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0, size_t dim1);
-  static std::unique_ptr<TensorFrame> reshape_without_grad(const TensorFrame &input, const SizeVec &sizes);
-  static std::unique_ptr<TensorFrame> reshape(const std::shared_ptr<TensorFrame> &input, const SizeVec &sizes);
-  static std::unique_ptr<TensorFrame> reshape(const std::shared_ptr<TensorFrame> &input, const std::string &sizes);
+  static std::unique_ptr<TensorFrame>
+  transpose_without_grad(const std::shared_ptr<TensorFrame> &input, size_t dim0,
+                         size_t dim1);
+  static std::unique_ptr<TensorFrame>
+  transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0,
+            size_t dim1);
+  static std::unique_ptr<TensorFrame>
+  reshape_without_grad(const TensorFrame &input, const SizeVec &sizes);
+  static std::unique_ptr<TensorFrame>
+  reshape(const std::shared_ptr<TensorFrame> &input,
+          const std::initializer_list<int> &sizes);
+  static std::unique_ptr<TensorFrame>
+  reshape(const std::shared_ptr<TensorFrame> &input, const SizeVec &sizes);
   std::unique_ptr<TensorFrame> sum() const;
   void zero_grad() const noexcept;
   TensorFrame &operator+=(const TensorFrame &rhs);
@@ -127,9 +135,9 @@ public:
   Tensor type(types t);
   Tensor operator[](const std::string &slice);
   static Tensor transpose(const Tensor &input, size_t dim0, size_t dim1);
-  static Tensor reshape(const Tensor &input, const SizeVec &sizes);
-  static Tensor reshape(const Tensor &input, const std::string &sizes);
-  Tensor reshape(const std::string &sizes);
+  static Tensor reshape(const Tensor &input,
+                        const std::initializer_list<int> &sizes);
+  Tensor reshape(const std::initializer_list<int> &sizes);
   Tensor reshape_as(const Tensor &input);
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;

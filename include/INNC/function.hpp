@@ -49,16 +49,16 @@ public:
 class ReshapeBack : public Backward {
 public:
   ReshapeBack(TensorFrame *this_tf,
-          const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
+              const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
   void step_back() override;
 };
 
 class TransposeBack : public Backward {
 public:
-  TransposeBack(TensorFrame *this_tf,
-          const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
+  TransposeBack(
+      TensorFrame *this_tf,
+      const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
   void step_back() override;
 };
-
 
 } // namespace INNC
