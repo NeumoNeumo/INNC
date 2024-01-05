@@ -16,61 +16,26 @@ Backward::Backward(
 
 Backward::~Backward() = default;
 
-TensorFrame &Backward::get_out_grad() { return *this_tf->grad.get(); }
-
-AddBack::AddBack(
-    TensorFrame *this_tf,
-    const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
-    : Backward(this_tf, input_tfs){};
+TensorFrame &Backward::get_out_grad() { return *this_tf->grad; }
 
 void AddBack::step_back() {
   input_tfs[0]->try_accumulate_grad(&get_out_grad());
   input_tfs[1]->try_accumulate_grad(&get_out_grad());
 }
 
-MulBack::MulBack(
-    TensorFrame *this_tf,
-    const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
-    : Backward(this_tf, input_tfs){};
-
 void MulBack::step_back() {
   input_tfs[0]->try_accumulate_grad(input_tfs[1].get(), &get_out_grad());
   input_tfs[1]->try_accumulate_grad(input_tfs[0].get(), &get_out_grad());
 }
 
-SumBack::SumBack(
-    TensorFrame *this_tf,
-    const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
-    : Backward(this_tf, input_tfs){};
-
 void SumBack::step_back() {
   input_tfs[0]->try_accumulate_grad(
-      TensorFrame::ones_like(*input_tfs[0].get()).get());
+      TensorFrame::ones_like(*input_tfs[0]).get());
 }
-
-ReshapeBack::ReshapeBack(
-    TensorFrame *this_tf,
-    const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
-    : Backward(this_tf, input_tfs){};
-
-void ReshapeBack::step_back() {
-  input_tfs[0]->try_accumulate_grad(*TensorFrame::reshape_without_grad(
-      *this_tf->grad.get(), input_tfs[0]->sizes));
-}
-
-TransposeBack::TransposeBack(
-    TensorFrame *this_tf,
-    const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
-    : Backward(this_tf, input_tfs){};
 
 void TransposeBack::step_back() {
-  SizeVec dim01;
-  for (size_t i = 0; i < this_tf->sizes.size(); i++) {
-    if (input_tfs[0].get()->sizes[i] != this_tf->sizes[i])
-      dim01.push_back(i);
-  }
   input_tfs[0]->try_accumulate_grad(
-      *TensorFrame::transpose_without_grad(this_tf->grad, dim01[0], dim01[1]));
+      TensorFrame::transpose(this_tf->grad, index[0], index[1]).get());
 }
 
 } // namespace INNC

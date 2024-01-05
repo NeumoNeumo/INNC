@@ -27,37 +27,26 @@ public:
 
 class AddBack : public Backward {
 public:
-  AddBack(TensorFrame *this_tf,
-          const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
+  using Backward::Backward;
   void step_back() override;
 };
 
 class MulBack : public Backward {
 public:
-  MulBack(TensorFrame *this_tf,
-          const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
+  using Backward::Backward;
   void step_back() override;
 };
 
 class SumBack : public Backward {
 public:
-  SumBack(TensorFrame *this_tf,
-          const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
-  void step_back() override;
-};
-
-class ReshapeBack : public Backward {
-public:
-  ReshapeBack(TensorFrame *this_tf,
-              const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
+  using Backward::Backward;
   void step_back() override;
 };
 
 class TransposeBack : public Backward {
 public:
-  TransposeBack(
-      TensorFrame *this_tf,
-      const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs);
+  using Backward::Backward;
+  size_t index[2];
   void step_back() override;
 };
 

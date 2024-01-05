@@ -312,8 +312,9 @@ void TensorFrame::try_accumulate_grad(TensorFrame *tf_w, TensorFrame *tf_o) {
     return;
   if (grad_fn.get() != nullptr)
     ++grad_fn->accumulated_n_outway;
-  if (grad.get() == nullptr)
+  if (grad.get() == nullptr) {
     grad = TensorFrame::zeros_like(*this);
+  }
   if (tf_o == nullptr)
     *grad += *tf_w;
   else if (is_float(tf_w->type()))
@@ -605,84 +606,6 @@ Tensor Tensor::operator[](const std::string &slice) {
   return Tensor((*this->fptr)[slice]);
 }
 
-std::unique_ptr<TensorFrame>
-INNC::TensorFrame::reshape_without_grad(const TensorFrame &input,
-                                        const SizeVec &sizes) {
-  size_t input_num = input.numel();
-  size_t output_num = 1;
-  for (auto i : sizes) {
-    output_num *= i;
-  }
-
-  run_expect(input_num == output_num,
-             "You're turning the tensor into an impossible shape.");
-  // Create a tensorframe of a given shape
-  auto tf = TensorFrame::ones(sizes, input.type());
-  tf.get()->data_ = input.data_;
-  return tf;
-}
-
-Tensor Tensor::reshape(const Tensor &input,
-                       const std::initializer_list<int> &sizes) {
-  auto tf = TensorFrame::reshape(input.fptr, sizes);
-
-  return Tensor(tf);
-}
-
-std::unique_ptr<TensorFrame>
-INNC::TensorFrame::reshape(const std::shared_ptr<TensorFrame> &input,
-                           const std::initializer_list<int> &sizes) {
-  std::vector<int> sizes_ = sizes;
-  size_t minu_one_index;
-  bool have_minus_one = false;
-  for (size_t i = 0; i < sizes_.size(); i++) {
-    if (sizes_[i] == -1) {
-      run_expect(!have_minus_one, "You cannot have two dimensions be -1");
-      minu_one_index = i;
-      have_minus_one = true;
-    }
-  }
-  if (have_minus_one) {
-    size_t s = 1;
-    for (size_t i = 0; i < sizes_.size(); i++) {
-      if (i != minu_one_index)
-        s *= sizes_[i];
-    }
-    sizes_[minu_one_index] = (input.get()->numel()) / s;
-  }
-  SizeVec sizes__;
-  for (size_t i = 0; i < sizes_.size(); i++) {
-    sizes__.push_back(sizes_[i]);
-  }
-  auto tf = TensorFrame::reshape_without_grad(*input.get(), sizes__);
-
-  if (!input.get()->requires_grad)
-    return tf;
-  tf->requires_grad = true;
-  tf->grad_fn.reset(new ReshapeBack(tf.get(), {input}));
-  return tf;
-}
-
-std::unique_ptr<TensorFrame>
-INNC::TensorFrame::reshape(const std::shared_ptr<TensorFrame> &input,
-                           const SizeVec &sizes) {
-  auto tf = TensorFrame::reshape_without_grad(*input.get(), sizes);
-
-  if (!input.get()->requires_grad)
-    return tf;
-  tf->requires_grad = true;
-  tf->grad_fn.reset(new ReshapeBack(tf.get(), {input}));
-  return tf;
-}
-
-Tensor Tensor::reshape(const std::initializer_list<int> &sizes) {
-  return Tensor(TensorFrame::reshape(this->fptr, sizes));
-}
-
-Tensor Tensor::reshape_as(const Tensor &input) {
-  return Tensor(TensorFrame::reshape(this->fptr, input.size()));
-}
-
 SizeVec cnt_to_index(size_t x, const SizeVec &sizes) {
   SizeVec result;
   result.resize(sizes.size());
@@ -694,66 +617,42 @@ SizeVec cnt_to_index(size_t x, const SizeVec &sizes) {
 }
 
 std::unique_ptr<TensorFrame>
-TensorFrame::transpose_without_grad(const std::shared_ptr<TensorFrame> &input,
-                                    size_t dim0, size_t dim1) {
-  run_expect(dim0 >= 0, "dimension must greater than 0.");
-  run_expect(dim1 >= 0, "dimension must greater than 0.");
-  run_expect(dim0 < input.get()->sizes.size(),
-             "dimension must less than input.size().size().");
-  run_expect(dim1 < input.get()->sizes.size(),
-             "dimension must less than input.size().size().");
-  run_expect(dim0 != dim1, "dim0 and dim1 must be distinguished.");
-  SizeVec old_sizes = input.get()->sizes;
-  SizeVec new_sizes = input.get()->sizes;
-  new_sizes[dim0] = old_sizes[dim1];
-  new_sizes[dim1] = old_sizes[dim0];
-  SizeVec index_0;
-  SizeVec index_1;
-  size_t element_num = input.get()->numel();
-  for (size_t i = 0; i < old_sizes.size(); i++)
-    index_0.push_back(0);
-  index_1 = index_0;
-  index_1[dim0] = index_0[dim1];
-  index_1[dim1] = index_0[dim0];
-  auto tf = TensorFrame::ones(new_sizes, input.get()->type());
-  for (size_t i = 0; i < element_num; i++) {
-    memcpy(tf.get()->data_.get() + tf.get()->offset +
-               tf.get()->cnt_from_index(index_1) *
-                   INNC::size_of(input.get()->type()),
-           input.get()->data_.get() + input.get()->offset +
-               input.get()->cnt_from_index(index_0) *
-                   INNC::size_of(input.get()->type()),
-           INNC::size_of(input.get()->type()));
-    index_0[old_sizes.size() - 1]++;
-    for (size_t j = 0; j < old_sizes.size() - 1; j++) {
-      if (index_0[old_sizes.size() - j - 1] >=
-          old_sizes[old_sizes.size() - j - 1]) {
-        index_0[old_sizes.size() - j - 1] -=
-            old_sizes[old_sizes.size() - j - 1];
-        index_0[old_sizes.size() - j - 2]++;
-      }
-    }
-    index_1 = index_0;
-    index_1[dim0] = index_0[dim1];
-    index_1[dim1] = index_0[dim0];
-  }
-  return tf;
-}
-
-std::unique_ptr<TensorFrame>
 TensorFrame::transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0,
                        size_t dim1) {
-  auto tf = TensorFrame::transpose_without_grad(input, dim0, dim1);
+  run_expect(dim0 >= 0 && dim1 >= 0 && dim0 < input->sizes.size() &&
+                 dim1 < input.get()->sizes.size(),
+             sformat("Index out of range dimension %lu. Actual input of "
+                     "transpose: (%lu, %lu)",
+                     input->sizes.size(), dim0, dim1));
+  run_expect(
+      dim0 != dim1,
+      sformat("dim0 and dim1 must be distinguished. But they are both %lu.",
+              dim0));
+  SizeVec _sizes = input->sizes;
+  SizeVec _strides = input->strides;
+  std::swap(_sizes[dim0], _sizes[dim1]);
+  std::swap(_strides[dim0], _strides[dim1]);
+  auto tf = std::make_unique<TensorFrame>(input->dtype, _sizes, _strides,
+                                          input->offset, false);
+  tf->data_ = input->data_;
+  tf->grad = input->grad;
   if (!input.get()->requires_grad)
     return tf;
   tf->requires_grad = true;
-  tf->grad_fn.reset(new TransposeBack(tf.get(), {input}));
+  auto back = new TransposeBack(tf.get(), {input});
+  back->index[0] = dim0;
+  back->index[1] = dim1;
+  tf->grad_fn.reset(back);
   return tf;
 }
 
 Tensor Tensor::transpose(const Tensor &input, size_t dim0, size_t dim1) {
   auto tf = TensorFrame::transpose(input.fptr, dim0, dim1);
+  return Tensor(tf);
+}
 
+Tensor Tensor::transpose(size_t dim0, size_t dim1) {
+  auto tf = TensorFrame::transpose(fptr, dim0, dim1);
   return Tensor(tf);
 }
 
