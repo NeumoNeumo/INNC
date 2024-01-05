@@ -39,14 +39,15 @@ void MulBack::step_back() {
 
 class SubBack : public Backward {
 public:
-    SubBack(TensorFrame *this_tf, const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
-        : Backward(this_tf, input_tfs) {}
+  SubBack(TensorFrame *this_tf,
+          const std::vector<std::shared_ptr<INNC::TensorFrame>> &input_tfs)
+      : Backward(this_tf, input_tfs) {}
 
-    void step_back() override {
-        input_tfs[0]->try_accumulate_grad(&get_out_grad());
-        auto neg_out_grad = get_out_grad().neg(); 
-        input_tfs[1]->try_accumulate_grad(neg_out_grad.get());
-    }
+  void step_back() override {
+    input_tfs[0]->try_accumulate_grad(&get_out_grad());
+    auto neg_out_grad = get_out_grad().neg();
+    input_tfs[1]->try_accumulate_grad(neg_out_grad.get());
+  }
 };
 
 SumBack::SumBack(

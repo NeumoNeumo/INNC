@@ -103,105 +103,117 @@ void for_each_sizevec(const SizeVec &range, auto op) {
 }
 
 std::unique_ptr<TensorFrame> TensorFrame::neg() const {
-    auto negated = std::make_unique<TensorFrame>(this->dtype, this->sizes, this->strides, 0);
+  auto negated =
+      std::make_unique<TensorFrame>(this->dtype, this->sizes, this->strides, 0);
 
-    size_t elem_size = INNC::size_of(this->dtype);
+  size_t elem_size = INNC::size_of(this->dtype);
 
-    for (size_t i = 0; i < this->data_.get_size() / elem_size; ++i) {
-        switch (this->dtype) {
-        case INNC::types::i8: {
-            int8_t* data = reinterpret_cast<int8_t*>(this->data_.get()) + i;
-            int8_t* negated_data = reinterpret_cast<int8_t*>(negated->data_.get()) + i;
-            *negated_data = -*data;
-            break;
-        }
-        case INNC::types::i16: {
-            int16_t* data = reinterpret_cast<int16_t*>(this->data_.get()) + i;
-            int16_t* negated_data = reinterpret_cast<int16_t*>(negated->data_.get()) + i;
-            *negated_data = -*data;
-            break;
-        }
-        case INNC::types::i32: {
-            int32_t* data = reinterpret_cast<int32_t*>(this->data_.get()) + i;
-            int32_t* negated_data = reinterpret_cast<int32_t*>(negated->data_.get()) + i;
-            *negated_data = -*data;
-            break;
-        }
-        case INNC::types::i64: {
-            int64_t* data = reinterpret_cast<int64_t*>(this->data_.get()) + i;
-            int64_t* negated_data = reinterpret_cast<int64_t*>(negated->data_.get()) + i;
-            *negated_data = -*data;
-            break;
-        }
-        case INNC::types::f32: {
-            float* data = reinterpret_cast<float*>(this->data_.get()) + i;
-            float* negated_data = reinterpret_cast<float*>(negated->data_.get()) + i;
-            *negated_data = -(*data);
-            break;
-        }
-        case INNC::types::f64: {
-            double* data = reinterpret_cast<double*>(this->data_.get()) + i;
-            double* negated_data = reinterpret_cast<double*>(negated->data_.get()) + i;
-            *negated_data = -(*data);
-            break;
-        }
-        default:
-            throw std::invalid_argument("Unsupported data type");
-        }
+  for (size_t i = 0; i < this->data_.get_size() / elem_size; ++i) {
+    switch (this->dtype) {
+    case INNC::types::i8: {
+      int8_t *data = reinterpret_cast<int8_t *>(this->data_.get()) + i;
+      int8_t *negated_data =
+          reinterpret_cast<int8_t *>(negated->data_.get()) + i;
+      *negated_data = -*data;
+      break;
     }
+    case INNC::types::i16: {
+      int16_t *data = reinterpret_cast<int16_t *>(this->data_.get()) + i;
+      int16_t *negated_data =
+          reinterpret_cast<int16_t *>(negated->data_.get()) + i;
+      *negated_data = -*data;
+      break;
+    }
+    case INNC::types::i32: {
+      int32_t *data = reinterpret_cast<int32_t *>(this->data_.get()) + i;
+      int32_t *negated_data =
+          reinterpret_cast<int32_t *>(negated->data_.get()) + i;
+      *negated_data = -*data;
+      break;
+    }
+    case INNC::types::i64: {
+      int64_t *data = reinterpret_cast<int64_t *>(this->data_.get()) + i;
+      int64_t *negated_data =
+          reinterpret_cast<int64_t *>(negated->data_.get()) + i;
+      *negated_data = -*data;
+      break;
+    }
+    case INNC::types::f32: {
+      float *data = reinterpret_cast<float *>(this->data_.get()) + i;
+      float *negated_data = reinterpret_cast<float *>(negated->data_.get()) + i;
+      *negated_data = -(*data);
+      break;
+    }
+    case INNC::types::f64: {
+      double *data = reinterpret_cast<double *>(this->data_.get()) + i;
+      double *negated_data =
+          reinterpret_cast<double *>(negated->data_.get()) + i;
+      *negated_data = -(*data);
+      break;
+    }
+    default:
+      throw std::invalid_argument("Unsupported data type");
+    }
+  }
 
-    return negated;
+  return negated;
 }
 
 std::unique_ptr<TensorFrame> TensorFrame::square() const {
-    auto squared = std::make_unique<TensorFrame>(this->dtype, this->sizes, this->strides, 0);
+  auto squared =
+      std::make_unique<TensorFrame>(this->dtype, this->sizes, this->strides, 0);
 
-    size_t elem_size = INNC::size_of(this->dtype);
+  size_t elem_size = INNC::size_of(this->dtype);
 
-    for (size_t i = 0; i < this->data_.get_size() / elem_size; ++i) {
-        switch (this->dtype) {
-        case INNC::types::i8: {
-            int8_t* data = reinterpret_cast<int8_t*>(this->data_.get()) + i;
-            int8_t* squared_data = reinterpret_cast<int8_t*>(squared->data_.get()) + i;
-            *squared_data = (*data) * (*data);
-            break;
-        }
-        case INNC::types::i16: {
-            int16_t* data = reinterpret_cast<int16_t*>(this->data_.get()) + i;
-            int16_t* squared_data = reinterpret_cast<int16_t*>(squared->data_.get()) + i;
-            *squared_data = (*data) * (*data);
-            break;
-        }
-        case INNC::types::i32: {
-            int32_t* data = reinterpret_cast<int32_t*>(this->data_.get()) + i;
-            int32_t* squared_data = reinterpret_cast<int32_t*>(squared->data_.get()) + i;
-            *squared_data = (*data) * (*data);
-            break;
-        }
-        case INNC::types::i64: {
-            int64_t* data = reinterpret_cast<int64_t*>(this->data_.get()) + i;
-            int64_t* squared_data = reinterpret_cast<int64_t*>(squared->data_.get()) + i;
-            *squared_data = (*data) * (*data);
-            break;
-        }
-        case INNC::types::f32: {
-            float* data = reinterpret_cast<float*>(this->data_.get()) + i;
-            float* squared_data = reinterpret_cast<float*>(squared->data_.get()) + i;
-            *squared_data = (*data) * (*data);
-            break;
-        }
-        case INNC::types::f64: {
-            double* data = reinterpret_cast<double*>(this->data_.get()) + i;
-            double* squared_data = reinterpret_cast<double*>(squared->data_.get()) + i;
-            *squared_data = (*data) * (*data);
-            break;
-        }
-        default:
-            throw std::invalid_argument("Unsupported data type");
-        }
+  for (size_t i = 0; i < this->data_.get_size() / elem_size; ++i) {
+    switch (this->dtype) {
+    case INNC::types::i8: {
+      int8_t *data = reinterpret_cast<int8_t *>(this->data_.get()) + i;
+      int8_t *squared_data =
+          reinterpret_cast<int8_t *>(squared->data_.get()) + i;
+      *squared_data = (*data) * (*data);
+      break;
     }
+    case INNC::types::i16: {
+      int16_t *data = reinterpret_cast<int16_t *>(this->data_.get()) + i;
+      int16_t *squared_data =
+          reinterpret_cast<int16_t *>(squared->data_.get()) + i;
+      *squared_data = (*data) * (*data);
+      break;
+    }
+    case INNC::types::i32: {
+      int32_t *data = reinterpret_cast<int32_t *>(this->data_.get()) + i;
+      int32_t *squared_data =
+          reinterpret_cast<int32_t *>(squared->data_.get()) + i;
+      *squared_data = (*data) * (*data);
+      break;
+    }
+    case INNC::types::i64: {
+      int64_t *data = reinterpret_cast<int64_t *>(this->data_.get()) + i;
+      int64_t *squared_data =
+          reinterpret_cast<int64_t *>(squared->data_.get()) + i;
+      *squared_data = (*data) * (*data);
+      break;
+    }
+    case INNC::types::f32: {
+      float *data = reinterpret_cast<float *>(this->data_.get()) + i;
+      float *squared_data = reinterpret_cast<float *>(squared->data_.get()) + i;
+      *squared_data = (*data) * (*data);
+      break;
+    }
+    case INNC::types::f64: {
+      double *data = reinterpret_cast<double *>(this->data_.get()) + i;
+      double *squared_data =
+          reinterpret_cast<double *>(squared->data_.get()) + i;
+      *squared_data = (*data) * (*data);
+      break;
+    }
+    default:
+      throw std::invalid_argument("Unsupported data type");
+    }
+  }
 
-    return squared;
+  return squared;
 }
 
 template <typename L, typename R>
@@ -353,9 +365,8 @@ template <typename ForwardType>
 concept is_valid_forward = is_valid_forward_func_<ForwardType>();
 
 template <typename ForwardType>
-  requires is_valid_forward<ForwardType>
-std::unique_ptr<TensorFrame> apply_no_grad_binary_op(TensorFrame &lhs,
-                                                     TensorFrame &rhs) {
+requires is_valid_forward<ForwardType> std::unique_ptr<TensorFrame>
+apply_no_grad_binary_op(TensorFrame &lhs, TensorFrame &rhs) {
   types lt = INNC::larger_type(lhs.dtype, rhs.dtype);
   auto ret = TensorFrame::make_tf(lt, lhs.sizes);
   if (lhs.dtype == lt) {
@@ -367,18 +378,17 @@ std::unique_ptr<TensorFrame> apply_no_grad_binary_op(TensorFrame &lhs,
 }
 
 template <typename ForwardType>
-  requires is_valid_forward<ForwardType>
-void apply_no_grad_binary_op(TensorFrame &dst, TensorFrame &lhs,
-                             TensorFrame &rhs) {
+requires is_valid_forward<ForwardType> void
+apply_no_grad_binary_op(TensorFrame &dst, TensorFrame &lhs, TensorFrame &rhs) {
   ForwardType::dispatch(dst.dtype, lhs.dtype, rhs.dtype)(&dst, &lhs, &rhs);
 }
 
 template <typename ForwardType, typename BackwardType>
-  requires is_valid_forward<ForwardType> &&
-           std::derived_from<BackwardType, Backward>
-std::unique_ptr<TensorFrame>
-apply_binary_operator(const std::shared_ptr<TensorFrame> &lhs,
-                      const std::shared_ptr<TensorFrame> &rhs) {
+requires is_valid_forward<ForwardType> &&
+    std::derived_from<BackwardType, Backward>
+        std::unique_ptr<TensorFrame>
+        apply_binary_operator(const std::shared_ptr<TensorFrame> &lhs,
+                              const std::shared_ptr<TensorFrame> &rhs) {
   check_same_size(*lhs.get(), *rhs.get());
   auto ret = apply_no_grad_binary_op<ForwardType>(*lhs.get(), *rhs.get());
   if (!lhs->requires_grad && !rhs->requires_grad)
