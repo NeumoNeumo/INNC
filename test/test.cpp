@@ -219,9 +219,10 @@ TEST(autograd, transpose) {
   auto b = Tensor::from_blob(data_i8_1, {3, 2}, INNC::i8).type(INNC::f64);
   a.requires_grad(true);
   b.requires_grad(true);
-  auto d = b.transpose(0, 1);
-  auto c = a * d;
-  c.sum().backward();
-  ASSERT_EQ(a.grad().to_string(), d.to_string());
+  auto c = b.transpose(0, 1);
+  c.retain_grad(true);
+  (a * c).sum().backward();
+  ASSERT_EQ(a.grad().to_string(), c.to_string());
+  ASSERT_EQ(c.grad().to_string(), a.to_string());
   ASSERT_EQ(b.grad().to_string(), a.transpose(0, 1).to_string());
 }

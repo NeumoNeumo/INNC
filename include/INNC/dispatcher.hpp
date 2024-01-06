@@ -2,7 +2,7 @@ namespace INNC {
 #define generate_unary_op_helper(op)                                           \
   class op##_helper {                                                          \
     constexpr static void (*spec_list[types::Count][types::Count])(            \
-        TensorFrame * to, TensorFrame *from) = {                               \
+        TensorImpl * to, TensorImpl *from) = {                                 \
         {op<std::int8_t, std::int8_t>, op<std::int8_t, std::int16_t>,          \
          op<std::int8_t, std::int32_t>, op<std::int8_t, std::int64_t>,         \
          op<std::int8_t, float>, op<std::int8_t, double>},                     \
@@ -30,7 +30,7 @@ namespace INNC {
 #define generate_binary_op_helper(op)                                          \
   class op##_helper {                                                          \
     constexpr static void (*spec_list[types::Count][types::Count])(            \
-        TensorFrame * dst, TensorFrame *l, TensorFrame *r) = {                 \
+        TensorImpl * dst, TensorImpl *l, TensorImpl *r) = {                    \
         {op<std::int8_t, std::int8_t>, op<std::int8_t, std::int16_t>,          \
          op<std::int8_t, std::int32_t>, op<std::int8_t, std::int64_t>,         \
          op<std::int8_t, float>, op<std::int8_t, double>},                     \
@@ -59,7 +59,7 @@ namespace INNC {
   class op##_helper {                                                          \
     constexpr static void (                                                    \
         *spec_list[float_type_n_][float_type_n_][types::Count])(               \
-        TensorFrame * dst, TensorFrame *l, TensorFrame *r) = {                 \
+        TensorImpl * dst, TensorImpl *l, TensorImpl *r) = {                    \
         {{op<float, float, std::int8_t>, op<float, float, std::int16_t>,       \
           op<float, float, std::int32_t>, op<float, float, std::int64_t>,      \
           op<float, float, float>, op<float, float, double>},                  \

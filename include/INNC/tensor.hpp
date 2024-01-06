@@ -1,67 +1,12 @@
 #pragma once
 
-#include "storage.hpp"
-#include "types.hpp"
+#include "INNC/storage.hpp"
+#include "INNC/types.hpp"
+#include "INNC/view.hpp"
 #include <memory>
 
 namespace INNC {
-class Backward;
-class Tensor;
-
-// All member functions defined here never set up grad_fn. Also see `Tensor`.
-class TensorFrame {
-public:
-  UntypedStorage data_;
-  std::shared_ptr<TensorFrame> grad;
-  const types dtype;
-  const SizeVec sizes;
-  const SizeVec strides;
-  const size_t offset;
-
-  size_t cnt_from_index(const SizeVec &index) const noexcept;
-  std::string to_string_helper(std::ptrdiff_t offset = 0, size_t l = 0) const;
-
-  bool requires_grad; // TODO 3 stricter encapsulation
-  bool retain_grad;
-  size_t _version;
-  std::unique_ptr<Backward> grad_fn;
-
-  TensorFrame() = delete;
-  TensorFrame(const TensorFrame &) = delete;
-  TensorFrame(TensorFrame &&t);
-  TensorFrame &operator=(const TensorFrame &t) = delete;
-  TensorFrame(types dtype, const SizeVec &sizes, const SizeVec &strides,
-              const size_t offset, bool prealloc = true);
-  ~TensorFrame();
-  static TensorFrame make_stub();
-  std::string to_string() const;
-  static std::unique_ptr<TensorFrame>
-  make_tf(types dtype, is_same_wo_cvref<SizeVec> auto &&sizes);
-  static std::unique_ptr<TensorFrame> zeros(const SizeVec &sizes, types dtype);
-  static std::unique_ptr<TensorFrame> ones(const SizeVec &sizes, types dtype);
-  static std::unique_ptr<TensorFrame> zeros_like(const TensorFrame &t);
-  static std::unique_ptr<TensorFrame> ones_like(const TensorFrame &t);
-  static std::unique_ptr<TensorFrame>
-  from_blob(void *data, const SizeVec &sizes, types dtype);
-  size_t numel() const noexcept;
-  void release() noexcept;
-  INNC::types type() const;
-  std::unique_ptr<TensorFrame> type(types t);
-  std::unique_ptr<TensorFrame> operator[](const std::string &slice);
-  static std::unique_ptr<TensorFrame>
-  transpose(const std::shared_ptr<TensorFrame> &input, size_t dim0,
-            size_t dim1);
-  std::unique_ptr<TensorFrame> sum() const;
-  void zero_grad() const noexcept;
-  TensorFrame &operator+=(const TensorFrame &rhs);
-  void try_accumulate_grad(TensorFrame *tf_w, TensorFrame *tf_o = nullptr);
-  friend std::unique_ptr<TensorFrame> no_grad_add(const TensorFrame &lhs,
-                                                  const TensorFrame &rhs);
-  friend void check_same_size(const TensorFrame &lhs, const TensorFrame &rhs);
-  friend class Backward;
-  void backward();
-};
-
+class TensorImpl;
 /**
  * @brief ``Tensor`` holds the information of a multi-dimentional matrix. The
  * shape, stride, type is dynamic to this class, which means you might assign
@@ -81,10 +26,10 @@ public:
  */
 class Tensor {
 private:
-  std::shared_ptr<TensorFrame> fptr;
-  Tensor(std::unique_ptr<TensorFrame> &tf);
-  Tensor(std::unique_ptr<TensorFrame> &&tf);
-  Tensor(std::shared_ptr<TensorFrame> &tf);
+  std::shared_ptr<TensorImpl> fptr;
+  Tensor(std::unique_ptr<TensorImpl> &tf);
+  Tensor(std::unique_ptr<TensorImpl> &&tf);
+  Tensor(std::shared_ptr<TensorImpl> &tf);
 
 public:
   /**
@@ -114,7 +59,7 @@ public:
   void backward();
   std::string to_string() const;
   const SizeVec size() const;
-  const SizeVec stride() const;
+  const DiffVec stride() const;
   static Tensor zeros(const SizeVec &size, types t);
   static Tensor ones(const SizeVec &size, types t);
   static Tensor zeros_like(const Tensor &t);
@@ -127,12 +72,12 @@ public:
   Tensor operator[](const std::string &slice);
   static Tensor transpose(const Tensor &input, size_t dim0, size_t dim1);
   Tensor transpose(size_t dim0, size_t dim1);
-  // TODO 1 member function transpose
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;
   void requires_grad(bool b);
   bool retain_grad() const noexcept;
   void retain_grad(bool b) noexcept;
+  size_t dim() const noexcept;
   Tensor grad() const noexcept;
   Tensor sum() const;
   void zero_grad() const noexcept;

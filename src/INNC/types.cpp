@@ -69,4 +69,10 @@ SizeVec::SizeVec(const std::initializer_list<size_t> &init_list)
     : std::vector<size_t>{init_list} {}
 SizeVec::SizeVec(is_same_wo_cvref<std::vector<int>> auto &&vec)
     : std::vector<size_t>(std::forward<decltype(vec)>(vec)) {}
+
+DiffVec::DiffVec() = default;
+DiffVec::DiffVec(const std::initializer_list<long long> &init_list)
+    : std::vector<long long>{init_list} {}
+DiffVec::DiffVec(is_same_wo_cvref<std::vector<int>> auto &&vec)
+    : std::vector<size_t>(std::forward<decltype(vec)>(vec)) {}
 } // namespace INNC
