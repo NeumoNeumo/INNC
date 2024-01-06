@@ -234,6 +234,24 @@ void tensor_mul(TensorFrame *dst, TensorFrame *l, TensorFrame *r) {
   });
 }
 
+template <typename L, typename R>
+void tensor_sub(TensorFrame *dst, TensorFrame *l, TensorFrame *r) {
+    for_each_sizevec(dst->sizes, [=](const SizeVec &sv) {
+        *(reinterpret_cast<L *>(dst->data_.get()) + dst->cnt_from_index(sv)) =
+            *(reinterpret_cast<L *>(l->data_.get()) + l->cnt_from_index(sv)) -
+            *(reinterpret_cast<R *>(r->data_.get()) + r->cnt_from_index(sv));
+    });
+}
+
+template <typename L, typename R>
+void tensor_div(TensorFrame *dst, TensorFrame *l, TensorFrame *r) {
+    for_each_sizevec(dst->sizes, [=](const SizeVec &sv) {
+        *(reinterpret_cast<L *>(dst->data_.get()) + dst->cnt_from_index(sv)) =
+            *(reinterpret_cast<L *>(l->data_.get()) + l->cnt_from_index(sv)) /
+            *(reinterpret_cast<R *>(r->data_.get()) + r->cnt_from_index(sv));
+    });
+}
+
 template <typename TensorType, typename NumberType>
 void tensor_fill(TensorFrame *tdata, TensorFrame *ndata) {
   TensorType num = *reinterpret_cast<NumberType *>(ndata->data_.get());
@@ -286,6 +304,8 @@ void tensor_mul_acc_f(TensorFrame *dst, TensorFrame *l, TensorFrame *r) {
 
 generate_binary_op_helper(tensor_add);
 generate_binary_op_helper(tensor_mul);
+generate_binary_op_helper(tensor_sub);
+generate_binary_op_helper(tensor_div);
 generate_unary_op_helper(tensor_fill);
 generate_unary_op_helper(tensor_to_type);
 generate_unary_op_helper(tensor_sum);
