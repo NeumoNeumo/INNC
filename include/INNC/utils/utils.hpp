@@ -94,8 +94,6 @@ void for_each_sizevec(const SizeVec &range, auto op) {
     SizeVec sv;
     auto last_idx = range.size() - 1;
     sv.resize(last_idx + 1, 0);
-    // for (auto &it : sv)
-    //   it = 0;
     while (true) {
       size_t ptr = last_idx;
       while (sv[ptr] == range[ptr]) {

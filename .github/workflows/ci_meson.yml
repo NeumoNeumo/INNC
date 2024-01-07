@@ -27,7 +27,7 @@ jobs:
         meson compile -C build/ -v 
     - name: Test
       run: | 
-        meson test -C build/ -v && ninja coverage-xml -C build/
+        meson test -C build/ -v && ninja test/coverage.xml -C build/
     - name: Upload failure if any
       uses: actions/upload-artifact@v4
       if: ${{ failure() }}
@@ -38,7 +38,7 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./build/meson-logs/coverage.xml
+        files: ./build/test/coverage.xml
         name: codecov-umbrella
         verbose: true
     - name: Document generation
