@@ -5,7 +5,6 @@
 #include "INNC/tensorImpl.hpp"
 #include "INNC/types.hpp"
 #include "INNC/utils/traits.hpp"
-#include "INNC/utils/utils.hpp"
 #include "INNC/view.hpp"
 #include <cstring>
 #include <queue>
@@ -13,13 +12,12 @@
 namespace INNC {
 Tensor::Tensor() = default;
 Tensor::Tensor(Tensor &&t) = default;
-Tensor::Tensor(std::unique_ptr<TensorImpl> &tf) : fptr(std::move(tf)){};
 Tensor::Tensor(std::unique_ptr<TensorImpl> &&tf) : fptr(std::move(tf)){};
-Tensor::Tensor(std::shared_ptr<TensorImpl> &tf) : fptr(tf){};
+Tensor::Tensor(std::shared_ptr<TensorImpl> tf) : fptr(tf){};
 Tensor &Tensor::operator=(const Tensor &t) = default;
 Tensor &Tensor::operator=(Tensor &&t) = default;
 Tensor::Tensor(const SizeVec &sizes, types dtype)
-    : fptr(std::make_unique<TensorImpl>(dtype, StridedView{sizes})){};
+    : fptr(TensorImpl::create(dtype, StridedView{sizes})){};
 Tensor::~Tensor() = default;
 
 void Tensor::backward() { fptr->backward(); }
@@ -67,50 +65,12 @@ Tensor &Tensor::operator+=(const Tensor &rhs) {
   return *this;
 }
 
-template <typename L, typename R>
-void tensor_add(TensorImpl *dst, TensorImpl *l, TensorImpl *r) {
-  auto dst_ptr = reinterpret_cast<L *>(dst->data_->get_blob());
-  auto l_ptr = reinterpret_cast<L *>(l->data_->get_blob());
-  auto r_ptr = reinterpret_cast<R *>(r->data_->get_blob());
-  for_each_sizevec(dst->view->sizes, [=](const SizeVec &sv) {
-    *(dst_ptr + dst->cnt_from_index(sv)) =
-        *(l_ptr + l->cnt_from_index(sv)) + *(r_ptr + r->cnt_from_index(sv));
-  });
-}
-
-template <typename L, typename R>
-void tensor_mul(TensorImpl *dst, TensorImpl *l, TensorImpl *r) {
-  auto dst_ptr = reinterpret_cast<L *>(dst->data_->get_blob());
-  auto l_ptr = reinterpret_cast<L *>(l->data_->get_blob());
-  auto r_ptr = reinterpret_cast<R *>(r->data_->get_blob());
-  for_each_sizevec(dst->view->sizes, [=](const SizeVec &sv) {
-    *(dst_ptr + dst->cnt_from_index(sv)) =
-        *(l_ptr + l->cnt_from_index(sv)) * *(r_ptr + r->cnt_from_index(sv));
-  });
-}
-
-generate_binary_op_helper(tensor_add);
-generate_binary_op_helper(tensor_mul);
-
 Tensor operator+(const Tensor &lhs, const Tensor &rhs) {
-  auto tf =
-      apply_binary_operator<tensor_add_helper, AddBack>(lhs.fptr, rhs.fptr);
-  return Tensor(tf);
+  return Tensor(*lhs.fptr + *rhs.fptr);
 }
 
 Tensor operator*(const Tensor &lhs, const Tensor &rhs) {
-  auto tf =
-      apply_binary_operator<tensor_mul_helper, MulBack>(lhs.fptr, rhs.fptr);
-  return Tensor(tf);
-}
-
-TensorImpl &TensorImpl::operator+=(const TensorImpl &rhs) {
-  run_expect(
-      !requires_grad,
-      "This inplace operation cannot perform on a tensor that requires grad.");
-  tensor_add_helper::dispatch(dtype, rhs.dtype)(this, this,
-                                                const_cast<TensorImpl *>(&rhs));
-  return *this;
+  return Tensor(*lhs.fptr * *rhs.fptr);
 }
 
 bool Tensor::requires_grad() const noexcept { return fptr->requires_grad; }

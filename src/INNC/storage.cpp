@@ -1,7 +1,7 @@
 #include "INNC/storage.hpp"
 #include <cstring>
 
-void UntypedStorage::create() { blob.reset(new uint8_t[size]); }
+void UntypedStorage::alloc() { blob.reset(new uint8_t[size]); }
 
 UntypedStorage::UntypedStorage(size_t size, bool prealloc) {
   this->size = size;

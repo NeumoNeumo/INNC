@@ -8,7 +8,7 @@ class UntypedStorage {
 
 public:
   UntypedStorage(size_t size, bool prealloc = true);
-  void create();
+  void alloc();
   size_t get_size() const noexcept;
   void zero_() const noexcept;
   uint8_t *get_blob();

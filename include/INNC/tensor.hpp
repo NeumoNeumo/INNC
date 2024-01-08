@@ -3,7 +3,6 @@
 #include "INNC/storage.hpp"
 #include "INNC/types.hpp"
 #include "INNC/view.hpp"
-#include <memory>
 
 namespace INNC {
 class TensorImpl;
@@ -18,18 +17,17 @@ class TensorImpl;
  * Examples:
  * \code{.cpp}
  * auto a = INNC::Tensor::zeros({2, 3, 4}, INNC::i16);
- * std::cout << a.to_string << std::endl;
+ * std::cout << a.to_string() << std::endl;
  * a = INNC::Tensor::ones({4, 3, 2}, INNC::i32);
- * std::cout << a.to_string << std::endl;
+ * std::cout << a.to_string() << std::endl;
  * \endcode
  *
  */
 class Tensor {
 private:
   std::shared_ptr<TensorImpl> fptr;
-  Tensor(std::unique_ptr<TensorImpl> &tf);
   Tensor(std::unique_ptr<TensorImpl> &&tf);
-  Tensor(std::shared_ptr<TensorImpl> &tf);
+  Tensor(std::shared_ptr<TensorImpl> tf);
 
 public:
   /**

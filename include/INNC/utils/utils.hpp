@@ -54,10 +54,10 @@ concept is_valid_forward = is_valid_forward_func_<ForwardType>();
 
 template <typename ForwardType>
   requires is_valid_forward<ForwardType>
-std::unique_ptr<TensorImpl> apply_no_grad_binary_op(TensorImpl &lhs,
-                                                    TensorImpl &rhs) {
+std::shared_ptr<TensorImpl> apply_no_grad_binary_op(const TensorImpl &lhs,
+                                                    const TensorImpl &rhs) {
   types lt = INNC::larger_type(lhs.dtype, rhs.dtype);
-  auto ret = std::make_unique<TensorImpl>(lt, StridedView{lhs.view->sizes});
+  auto ret = INNC::TensorImpl::create(lt, StridedView{lhs.view->sizes});
   if (lhs.dtype == lt) {
     ForwardType::dispatch(lhs.dtype, rhs.dtype)(ret.get(), &lhs, &rhs);
   } else {
@@ -68,19 +68,19 @@ std::unique_ptr<TensorImpl> apply_no_grad_binary_op(TensorImpl &lhs,
 
 template <typename ForwardType>
   requires is_valid_forward<ForwardType>
-void apply_no_grad_binary_op(TensorImpl &dst, TensorImpl &lhs,
-                             TensorImpl &rhs) {
+void apply_no_grad_binary_op(TensorImpl &dst, const TensorImpl &lhs,
+                             const TensorImpl &rhs) {
   ForwardType::dispatch(dst.dtype, lhs.dtype, rhs.dtype)(&dst, &lhs, &rhs);
 }
 
 template <typename ForwardType, typename BackwardType>
   requires is_valid_forward<ForwardType> &&
            std::derived_from<BackwardType, Backward>
-std::unique_ptr<TensorImpl>
-apply_binary_operator(const std::shared_ptr<TensorImpl> &lhs,
-                      const std::shared_ptr<TensorImpl> &rhs) {
+std::shared_ptr<TensorImpl>
+apply_binary_operator(std::shared_ptr<TensorImpl> lhs,
+                      std::shared_ptr<TensorImpl> rhs) {
   check_same_size(*lhs.get(), *rhs.get());
-  auto ret = apply_no_grad_binary_op<ForwardType>(*lhs.get(), *rhs.get());
+  auto ret = apply_no_grad_binary_op<ForwardType>(*lhs, *rhs);
   if (!lhs->requires_grad && !rhs->requires_grad)
     return ret;
   ret->requires_grad = true;

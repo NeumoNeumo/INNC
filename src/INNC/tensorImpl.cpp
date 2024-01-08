@@ -53,31 +53,61 @@ std::string TensorImpl::to_string() const {
 
 TensorImpl::~TensorImpl() = default;
 
-TensorImpl::TensorImpl(TensorImpl &&t) = default;
-
 TensorImpl::TensorImpl(types dtype, const std::shared_ptr<StridedView> &view,
-                       const std::shared_ptr<UntypedStorage> &data_)
+                       const std::shared_ptr<UntypedStorage> &data_, Private)
     : data_(data_), view(view), dtype(dtype) {
   requires_grad = false;
   retain_grad = false;
   _version = 0;
 }
 
-TensorImpl::TensorImpl(types dtype, const std::shared_ptr<StridedView> &view,
-                       bool prealloc)
-    : TensorImpl(dtype, view,
-                 std::make_unique<UntypedStorage>(
-                     size_of(dtype) * view->numel(), prealloc)) {
-  if (prealloc)
-    data_->create();
+std::shared_ptr<TensorImpl>
+TensorImpl::create(types dtype, const std::shared_ptr<StridedView> &view,
+                   const std::shared_ptr<UntypedStorage> &data_) {
+  return std::make_shared<TensorImpl>(dtype, view, data_, Private{});
 }
 
-TensorImpl::TensorImpl(types dtype, StridedView &&view, bool prealloc)
-    : TensorImpl{dtype, std::make_unique<StridedView>(std::move(view)),
-                 prealloc} {}
+std::shared_ptr<TensorImpl>
+TensorImpl::create(types dtype, const std::shared_ptr<StridedView> &view,
+                   bool prealloc) {
+  auto ptr = create(dtype, view,
+                    std::make_unique<UntypedStorage>(
+                        size_of(dtype) * view->numel(), prealloc));
+  if (prealloc)
+    ptr->data_->alloc();
+  return ptr;
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::create(types dtype, StridedView &&view,
+                                               bool prealloc) {
+  return create(dtype, std::make_unique<StridedView>(std::move(view)),
+                prealloc);
+}
+
+template <typename L, typename R>
+void tensor_add(TensorImpl *dst, const TensorImpl *l, const TensorImpl *r) {
+  auto dst_ptr = reinterpret_cast<L *>(dst->data_->get_blob());
+  auto l_ptr = reinterpret_cast<L *>(l->data_->get_blob());
+  auto r_ptr = reinterpret_cast<R *>(r->data_->get_blob());
+  for_each_sizevec(dst->view->sizes, [=](const SizeVec &sv) {
+    *(dst_ptr + dst->cnt_from_index(sv)) =
+        *(l_ptr + l->cnt_from_index(sv)) + *(r_ptr + r->cnt_from_index(sv));
+  });
+}
+
+template <typename L, typename R>
+void tensor_mul(TensorImpl *dst, const TensorImpl *l, const TensorImpl *r) {
+  auto dst_ptr = reinterpret_cast<L *>(dst->data_->get_blob());
+  auto l_ptr = reinterpret_cast<L *>(l->data_->get_blob());
+  auto r_ptr = reinterpret_cast<R *>(r->data_->get_blob());
+  for_each_sizevec(dst->view->sizes, [=](const SizeVec &sv) {
+    *(dst_ptr + dst->cnt_from_index(sv)) =
+        *(l_ptr + l->cnt_from_index(sv)) * *(r_ptr + r->cnt_from_index(sv));
+  });
+}
 
 template <typename TensorType, typename NumberType>
-void tensor_fill(TensorImpl *tdata, TensorImpl *ndata) {
+void tensor_fill(TensorImpl *tdata, const TensorImpl *ndata) {
   TensorType num = *reinterpret_cast<NumberType *>(ndata->data_->get_blob());
   auto t_ptr = reinterpret_cast<TensorType *>(tdata->data_->get_blob());
   for_each_sizevec(tdata->view->sizes, [=](const SizeVec &sv) {
@@ -86,7 +116,7 @@ void tensor_fill(TensorImpl *tdata, TensorImpl *ndata) {
 }
 
 template <typename ToType, typename FromType>
-void tensor_to_type(TensorImpl *todata, TensorImpl *fromdata) {
+void tensor_to_type(TensorImpl *todata, const TensorImpl *fromdata) {
   ToType *to_ptr = reinterpret_cast<ToType *>(todata->data_->get_blob());
   FromType *from_ptr =
       reinterpret_cast<FromType *>(fromdata->data_->get_blob());
@@ -97,7 +127,7 @@ void tensor_to_type(TensorImpl *todata, TensorImpl *fromdata) {
 }
 
 template <typename ToType, typename FromType>
-void tensor_sum(TensorImpl *todata, TensorImpl *fromdata) {
+void tensor_sum(TensorImpl *todata, const TensorImpl *fromdata) {
   SizeVec sv;
   auto &data_sizes = fromdata->view->sizes;
   auto last_idx = data_sizes.size() - 1;
@@ -121,7 +151,8 @@ void tensor_sum(TensorImpl *todata, TensorImpl *fromdata) {
 }
 
 template <typename D, typename L, typename R>
-void tensor_mul_acc_f(TensorImpl *dst, TensorImpl *l, TensorImpl *r) {
+void tensor_mul_acc_f(TensorImpl *dst, const TensorImpl *l,
+                      const TensorImpl *r) {
   auto dst_ptr = reinterpret_cast<D *>(dst->data_->get_blob());
   auto l_ptr = reinterpret_cast<L *>(l->data_->get_blob());
   auto r_ptr = reinterpret_cast<R *>(r->data_->get_blob());
@@ -131,38 +162,59 @@ void tensor_mul_acc_f(TensorImpl *dst, TensorImpl *l, TensorImpl *r) {
   });
 }
 
+generate_binary_op_helper(tensor_add);
+generate_binary_op_helper(tensor_mul);
 generate_unary_op_helper(tensor_fill);
 generate_unary_op_helper(tensor_to_type);
 generate_unary_op_helper(tensor_sum);
 generate_ffi_op_helper(tensor_mul_acc_f);
 
-std::unique_ptr<TensorImpl> TensorImpl::ones(const SizeVec &sizes,
+std::shared_ptr<TensorImpl> operator+(TensorImpl &l, TensorImpl &r) {
+  return apply_binary_operator<tensor_add_helper, AddBack>(
+      l.shared_from_this(), r.shared_from_this());
+}
+
+std::shared_ptr<TensorImpl> operator*(TensorImpl &l, TensorImpl &r) {
+  return apply_binary_operator<tensor_mul_helper, MulBack>(
+      l.shared_from_this(), r.shared_from_this());
+}
+
+TensorImpl &TensorImpl::operator+=(const TensorImpl &rhs) {
+  run_expect(
+      !requires_grad,
+      "This inplace operation cannot perform on a tensor that requires grad.");
+  tensor_add_helper::dispatch(dtype, rhs.dtype)(this, this,
+                                                const_cast<TensorImpl *>(&rhs));
+  return *this;
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::ones(const SizeVec &sizes,
                                              types dtype) {
-  TensorImpl one_{i8, SizeVec{}};
-  *reinterpret_cast<char *>(one_.data_->get_blob()) = 1;
-  auto ret = std::make_unique<TensorImpl>(dtype, StridedView{sizes});
-  tensor_fill_helper::dispatch(dtype, i8)(ret.get(), &one_);
+  auto one_ = create(i8, SizeVec{});
+  *reinterpret_cast<char *>(one_->data_->get_blob()) = 1;
+  auto ret = create(dtype, make_shared<StridedView>(sizes));
+  tensor_fill_helper::dispatch(dtype, i8)(ret.get(), one_.get());
   return ret;
 }
 
-std::unique_ptr<TensorImpl> TensorImpl::zeros(const SizeVec &sizes,
+std::shared_ptr<TensorImpl> TensorImpl::zeros(const SizeVec &sizes,
                                               types dtype) {
-  auto ret = std::make_unique<TensorImpl>(dtype, StridedView{sizes});
+  auto ret = create(dtype, StridedView{sizes});
   ret->data_->zero_();
   return ret;
 }
 
-std::unique_ptr<TensorImpl> TensorImpl::zeros_like(const TensorImpl &t) {
+std::shared_ptr<TensorImpl> TensorImpl::zeros_like(const TensorImpl &t) {
   return TensorImpl::zeros(t.view->sizes, t.dtype);
 }
 
-std::unique_ptr<TensorImpl> TensorImpl::ones_like(const TensorImpl &t) {
+std::shared_ptr<TensorImpl> TensorImpl::ones_like(const TensorImpl &t) {
   return TensorImpl::ones(t.view->sizes, t.dtype);
 }
 
-std::unique_ptr<TensorImpl>
+std::shared_ptr<TensorImpl>
 TensorImpl::from_blob(void *data, const SizeVec &sizes, types dtype) {
-  auto ret = std::make_unique<TensorImpl>(dtype, StridedView{sizes});
+  auto ret = create(dtype, StridedView{sizes});
   std::memcpy(ret->data_->get_blob(), data,
               ret->numel() * INNC::size_of(dtype));
   return ret;
@@ -194,8 +246,8 @@ void TensorImpl::release() noexcept { data_->release(); }
 
 inline INNC::types TensorImpl::type() const { return this->dtype; }
 
-std::unique_ptr<TensorImpl> TensorImpl::type(types t) {
-  auto tf = std::make_unique<TensorImpl>(t, StridedView{view->sizes});
+std::shared_ptr<TensorImpl> TensorImpl::type(types t) {
+  auto tf = create(t, StridedView{view->sizes});
   tensor_to_type_helper::dispatch(t, dtype)(tf.get(), this);
   return tf;
 }
@@ -210,10 +262,10 @@ void TensorImpl::try_accumulate_grad(TensorImpl *tf_w, TensorImpl *tf_o) {
   if (grad_fn.get() != nullptr)
     ++grad_fn->accumulated_n_outway;
   if (grad.get() == nullptr) {
-    grad = std::make_unique<TensorImpl>(dtype, view);
+    grad = create(dtype, view);
     grad->data_->zero_();
   } else if (!grad->data_->is_alloc()) {
-    grad->data_->create();
+    grad->data_->alloc();
     grad->data_->zero_();
   }
   if (tf_o == nullptr)
@@ -288,7 +340,7 @@ void TensorImpl::backward() {
   }
 }
 
-std::unique_ptr<TensorImpl> TensorImpl::sum() const {
+std::shared_ptr<TensorImpl> TensorImpl::sum() const {
   INNC::types dst_t;
   if (dtype <= i64)
     dst_t = i64;
@@ -306,7 +358,7 @@ void TensorImpl::zero_grad() const noexcept {
   grad->data_->zero_();
 }
 
-std::unique_ptr<TensorImpl> TensorImpl::operator[](const std::string &slice) {
+std::shared_ptr<TensorImpl> TensorImpl::operator[](const std::string &slice) {
   std::vector<std::string> each_dim = ssplit(slice, ',');
   SizeVec _sizes;
   DiffVec _strides;
@@ -403,7 +455,7 @@ std::unique_ptr<TensorImpl> TensorImpl::operator[](const std::string &slice) {
       _offset += beg * strides[dim];
     } // like a[-2:]
   }
-  auto ret = std::make_unique<TensorImpl>(
+  auto ret = create(
       dtype, std::make_unique<StridedView>(_sizes, _strides, _offset), data_);
   // share_grad_storage(*ret, *this); // TODO
   return ret;
@@ -411,12 +463,12 @@ std::unique_ptr<TensorImpl> TensorImpl::operator[](const std::string &slice) {
 
 void share_grad_storage(TensorImpl &to, TensorImpl &from) {
   if (from.grad == nullptr) {
-    from.grad.reset(new TensorImpl(from.dtype, from.view, false));
+    from.grad = TensorImpl::create(from.dtype, from.view, false);
   }
-  to.grad.reset(new TensorImpl(to.dtype, to.view, from.grad->data_));
+  to.grad = TensorImpl::create(to.dtype, to.view, from.grad->data_);
 }
 
-std::unique_ptr<TensorImpl>
+std::shared_ptr<TensorImpl>
 TensorImpl::transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0,
                       size_t dim1) {
   auto dim = input->dim();
@@ -432,7 +484,7 @@ TensorImpl::transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0,
   DiffVec _strides = input->view->strides;
   std::swap(_sizes[dim0], _sizes[dim1]);
   std::swap(_strides[dim0], _strides[dim1]);
-  auto tf = std::make_unique<TensorImpl>(
+  auto tf = create(
       input->dtype,
       std::make_unique<StridedView>(_sizes, _strides, input->view->offset),
       input->data_);
