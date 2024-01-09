@@ -11,7 +11,7 @@ public:
   void alloc();
   size_t get_size() const noexcept;
   void zero_() const noexcept;
-  uint8_t *get_blob();
+  uint8_t *get_blob() const noexcept;
   void release() noexcept;
   bool is_alloc() const noexcept;
 };

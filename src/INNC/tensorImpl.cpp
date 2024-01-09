@@ -12,76 +12,63 @@
 #include <queue>
 
 namespace INNC {
+
 size_t TensorImpl::dim() const noexcept { return view->dim(); }
 
-size_t TensorImpl::cnt_from_index(const SizeVec &index) const noexcept {
-  assertm(index.size() == dim(), "index mismatches sizes");
-  size_t pos = view->offset;
-  for (size_t i = 0; i < index.size(); ++i) {
-    pos += view->strides[i] * index[i];
-  }
-  return pos;
+size_t TensorImpl::cnt_from_index(const SizeVec &index) const {
+  if (dlayout == layouts::strided)
+    return dynamic_cast<StridedView *>(view.get())->cnt_from_index(index);
+  else
+    throw std::runtime_error(
+        sformat("This layout %s has not been implemented", layouts::sparse));
 }
 
-std::string to_string_helper(const TensorImpl *tf, std::ptrdiff_t offset = 0,
-                             size_t depth = 0) {
-  if (depth == tf->dim()) {
-    void *ptr = tf->data_->get_blob() + offset;
-    return INNC::innc_type_to_string(ptr, tf->dtype);
+DiffVec TensorImpl::stride() const {
+  if (typeid(view) == typeid(std::shared_ptr<StridedView>)) {
+    return dynamic_cast<StridedView *>(view.get())->strides;
+  } else {
+    throw std::runtime_error("Scalar do not have stride");
   }
-  bool begin = true;
-  std::string ret = "[";
-  for (size_t i = 0; i < tf->view->sizes[depth]; ++i) {
-    std::ptrdiff_t sub_offset =
-        offset + i * tf->view->strides[depth] * INNC::size_of(tf->dtype);
-    if (begin) {
-      ret += to_string_helper(tf, sub_offset, depth + 1);
-      begin = false;
-      continue;
-    }
-    ret += ", " + to_string_helper(tf, sub_offset, depth + 1);
-  }
-  return ret + "]";
 }
 
 std::string TensorImpl::to_string() const {
-  if (__UNLIKELY(dim() == 0))
-    return INNC::innc_type_to_string(
-        data_->get_blob() + view->offset * INNC::size_of(dtype), dtype);
-  return to_string_helper(this, view->offset * INNC::size_of(dtype));
+  return view->to_string_from(*data_, dtype);
 }
 
 TensorImpl::~TensorImpl() = default;
 
-TensorImpl::TensorImpl(types dtype, const std::shared_ptr<StridedView> &view,
+TensorImpl::TensorImpl(types dtype, layouts dlayout,
+                       const std::shared_ptr<View> &view,
                        const std::shared_ptr<UntypedStorage> &data_, Private)
-    : data_(data_), view(view), dtype(dtype) {
+    : data_(data_), view(view), dtype(dtype), dlayout(dlayout) {
   requires_grad = false;
   retain_grad = false;
   _version = 0;
 }
 
 std::shared_ptr<TensorImpl>
-TensorImpl::create(types dtype, const std::shared_ptr<StridedView> &view,
-                   const std::shared_ptr<UntypedStorage> &data_) {
-  return std::make_shared<TensorImpl>(dtype, view, data_, Private{});
+TensorImpl::create(types dtype, const std::shared_ptr<View> &view,
+                   const std::shared_ptr<UntypedStorage> &data_,
+                   layouts dlayout) {
+  return std::make_shared<TensorImpl>(dtype, dlayout, view, data_, Private{});
 }
 
 std::shared_ptr<TensorImpl>
-TensorImpl::create(types dtype, const std::shared_ptr<StridedView> &view,
-                   bool prealloc) {
+TensorImpl::create(types dtype, const std::shared_ptr<View> &view,
+                   bool prealloc, layouts dlayout) {
   auto ptr = create(dtype, view,
                     std::make_unique<UntypedStorage>(
-                        size_of(dtype) * view->numel(), prealloc));
+                        size_of(dtype) * view->numel(), prealloc),
+                    dlayout);
   if (prealloc)
     ptr->data_->alloc();
   return ptr;
 }
 
 std::shared_ptr<TensorImpl> TensorImpl::create(types dtype, StridedView &&view,
-                                               bool prealloc) {
-  return create(dtype, std::make_unique<StridedView>(std::move(view)),
-                prealloc);
+                                               bool prealloc, layouts dlayout) {
+  return create(dtype, std::make_shared<StridedView>(std::move(view)), prealloc,
+                dlayout);
 }
 
 template <typename L, typename R>
@@ -110,9 +97,17 @@ template <typename TensorType, typename NumberType>
 void tensor_fill(TensorImpl *tdata, const TensorImpl *ndata) {
   TensorType num = *reinterpret_cast<NumberType *>(ndata->data_->get_blob());
   auto t_ptr = reinterpret_cast<TensorType *>(tdata->data_->get_blob());
-  for_each_sizevec(tdata->view->sizes, [=](const SizeVec &sv) {
-    *(t_ptr + tdata->cnt_from_index(sv)) = num;
-  });
+  if (__LIKELY(tdata->dlayout == layouts::strided)) {
+    if (__LIKELY(tdata->view->dim() != 0)) {
+      for_each_sizevec(tdata->view->sizes, [=](const SizeVec &sv) {
+        *(t_ptr + tdata->cnt_from_index(sv)) = num;
+      });
+    } else {
+      *(t_ptr + dynamic_cast<StridedView *>(tdata->view.get())->offset) = num;
+    }
+  } else {
+    throw std::logic_error("Not implemented yet");
+  }
 }
 
 template <typename ToType, typename FromType>
@@ -134,19 +129,28 @@ void tensor_sum(TensorImpl *todata, const TensorImpl *fromdata) {
   ToType *to_ptr = reinterpret_cast<ToType *>(todata->data_->get_blob());
   FromType *from_ptr =
       reinterpret_cast<FromType *>(fromdata->data_->get_blob());
-  sv.resize(last_idx + 1);
-  for (auto &it : sv)
-    it = 0;
-  while (true) {
-    size_t ptr = last_idx;
-    while (sv[ptr] == data_sizes[ptr]) {
-      if (ptr == 0)
-        return;
-      sv[ptr] = 0;
-      ++sv[--ptr];
+  if (__LIKELY(fromdata->view->dim() != 0)) {
+    sv.resize(last_idx + 1);
+    for (auto &it : sv)
+      it = 0;
+    while (true) {
+      size_t ptr = last_idx;
+      while (sv[ptr] == data_sizes[ptr]) {
+        if (ptr == 0)
+          return;
+        sv[ptr] = 0;
+        ++sv[--ptr];
+      }
+      *to_ptr += *(from_ptr + fromdata->cnt_from_index(sv));
+      ++sv[last_idx];
     }
-    *to_ptr += *(from_ptr + fromdata->cnt_from_index(sv));
-    ++sv[last_idx];
+  } else {
+    if (fromdata->dlayout == layouts::strided) {
+      *to_ptr = *(from_ptr +
+                  dynamic_cast<StridedView *>(fromdata->view.get())->offset);
+    } else {
+      throw std::logic_error("Not implemented yet");
+    }
   }
 }
 
@@ -340,15 +344,18 @@ void TensorImpl::backward() {
   }
 }
 
-std::shared_ptr<TensorImpl> TensorImpl::sum() const {
+std::shared_ptr<TensorImpl> TensorImpl::sum() {
   INNC::types dst_t;
   if (dtype <= i64)
     dst_t = i64;
   else
     dst_t = f64;
-  auto tf = zeros(SizeVec{1}, dst_t);
-  tensor_sum_helper::dispatch(dst_t, dtype)(tf.get(),
-                                            const_cast<TensorImpl *>(this));
+  auto tf = zeros(SizeVec{}, dst_t);
+  tensor_sum_helper::dispatch(dst_t, dtype)(tf.get(), this);
+  if (requires_grad) {
+    tf->requires_grad = true;
+    tf->grad_fn.reset(new SumBack(tf.get(), {shared_from_this()}));
+  }
   return tf;
 }
 
@@ -358,114 +365,123 @@ void TensorImpl::zero_grad() const noexcept {
   grad->data_->zero_();
 }
 
-std::shared_ptr<TensorImpl> TensorImpl::operator[](const std::string &slice) {
-  std::vector<std::string> each_dim = ssplit(slice, ',');
-  SizeVec _sizes;
-  DiffVec _strides;
-  auto &sizes = view->sizes;
-  auto &strides = view->strides;
-  auto offset = view->offset;
-  size_t _offset = offset;
-  run_expect(each_dim.size() <= sizes.size(),
-             "Dimension of slicing is larger than sizes.");
-  for (size_t dim = 0; dim < sizes.size(); ++dim) {
-    std::vector<std::string> split_slice;
-    if (dim < each_dim.size()) {
-      split_slice = ssplit(each_dim[dim], ':');
-      for (auto &s : split_slice)
-        trim_(s);
-    } else
-      split_slice = {"", "", ""};
-    if (split_slice.size() == 1) { // like a[-2]
-      long long idx = std::stoll(split_slice[0]);
-      if (idx < 0)
-        idx += sizes[dim];
-      run_expect(
-          idx >= 0 && idx < static_cast<long long>(sizes[dim]),
-          sformat("index %d is out of bounds for dimension %lu with size %lu",
-                  idx, dim, sizes[dim]));
-      _offset += strides[dim] * idx;
-    } else { // like a[-2:]
-      if (sizes[dim] == 0) {
-        _sizes.push_back(0);
-        _strides.push_back(0);
-        continue;
-      }
-      for (int i = split_slice.size(); i < 3; ++i)
-        split_slice.push_back("");
-      long long step, beg, end;
-      if (split_slice[2].size() != 0) {
-        step = stoll(split_slice[2]);
-        run_expect(step != 0, "slice step cannot be zero");
-      } else
-        step = 1;
-      if (split_slice[0].size() != 0) {
-        beg = stoll(split_slice[0]);
-        if (beg < 0)
-          beg += sizes[dim];
-        if (beg < 0) {
-          if (step > 0)
-            beg = 0;
-          else {
-            _sizes.push_back(0);
-            _strides.push_back(0);
-            continue;
-          }
-        }
-        if (beg >= static_cast<long long>(sizes[dim])) {
-          if (step > 0) {
-            _sizes.push_back(0);
-            _strides.push_back(0);
-            continue;
-          } else
-            beg = sizes[dim] - 1;
-        }
-      } else
-        beg = step > 0 ? 0 : sizes[dim] - 1;
-      if (split_slice[1].size() != 0) {
-        end = stoll(split_slice[1]);
-        if (end < 0)
-          end += sizes[dim];
-        if (step > 0) {
-          if (end <= 0) {
-            _sizes.push_back(0);
-            _strides.push_back(0);
-            continue;
-          }
-          if (end > static_cast<long long>(sizes[dim]))
-            end = sizes[dim];
-        } else {
-          if (end < 0)
-            end = -1;
-          if (end >= static_cast<long long>(sizes[dim]) - 1) {
-            _sizes.push_back(0);
-            _strides.push_back(0);
-            continue;
-          }
-        }
-      } else
-        end = step > 0 ? sizes[dim] : -1;
-      if ((step > 0 && beg >= end) || (step < 0 && beg <= end)) {
-        _sizes.push_back(0);
-        _strides.push_back(0);
-        continue;
-      }
-      _sizes.push_back((std::abs(end - beg) - 1) / std::abs(step) + 1);
-      _strides.push_back(step * strides[dim]);
-      _offset += beg * strides[dim];
-    } // like a[-2:]
-  }
-  auto ret = create(
-      dtype, std::make_unique<StridedView>(_sizes, _strides, _offset), data_);
-  // share_grad_storage(*ret, *this); // TODO
-  return ret;
-}
-
 void share_grad_storage(TensorImpl &to, TensorImpl &from) {
   if (from.grad == nullptr) {
     from.grad = TensorImpl::create(from.dtype, from.view, false);
   }
   to.grad = TensorImpl::create(to.dtype, to.view, from.grad->data_);
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::operator[](const std::string &slice) {
+  if (dlayout == layouts::strided) {
+    std::vector<std::string> each_dim = ssplit(slice, ',');
+    SizeVec _sizes;
+    DiffVec _strides;
+    auto view_s = dynamic_cast<StridedView *>(view.get());
+    auto &sizes = view_s->sizes;
+    auto &strides = view_s->strides;
+    auto offset = view_s->offset;
+    size_t _offset = offset;
+    run_expect(each_dim.size() <= sizes.size(),
+               "Dimension of slicing is larger than sizes.");
+    for (size_t dim = 0; dim < sizes.size(); ++dim) {
+      std::vector<std::string> split_slice;
+      if (dim < each_dim.size()) {
+        split_slice = ssplit(each_dim[dim], ':');
+        for (auto &s : split_slice)
+          trim_(s);
+      } else
+        split_slice = {"", "", ""};
+      if (split_slice.size() == 1) { // like a[-2]
+        long long idx = std::stoll(split_slice[0]);
+        if (idx < 0)
+          idx += sizes[dim];
+        run_expect(
+            idx >= 0 && idx < static_cast<long long>(sizes[dim]),
+            sformat("index %d is out of bounds for dimension %lu with size %lu",
+                    idx, dim, sizes[dim]));
+        _offset += strides[dim] * idx;
+      } else { // like a[-2:]
+        if (sizes[dim] == 0) {
+          _sizes.push_back(0);
+          _strides.push_back(0);
+          continue;
+        }
+        for (int i = split_slice.size(); i < 3; ++i)
+          split_slice.push_back("");
+        long long step, beg, end;
+        if (split_slice[2].size() != 0) {
+          step = stoll(split_slice[2]);
+          run_expect(step != 0, "slice step cannot be zero");
+        } else
+          step = 1;
+        if (split_slice[0].size() != 0) {
+          beg = stoll(split_slice[0]);
+          if (beg < 0)
+            beg += sizes[dim];
+          if (beg < 0) {
+            if (step > 0)
+              beg = 0;
+            else {
+              _sizes.push_back(0);
+              _strides.push_back(0);
+              continue;
+            }
+          }
+          if (beg >= static_cast<long long>(sizes[dim])) {
+            if (step > 0) {
+              _sizes.push_back(0);
+              _strides.push_back(0);
+              continue;
+            } else
+              beg = sizes[dim] - 1;
+          }
+        } else
+          beg = step > 0 ? 0 : sizes[dim] - 1;
+        if (split_slice[1].size() != 0) {
+          end = stoll(split_slice[1]);
+          if (end < 0)
+            end += sizes[dim];
+          if (step > 0) {
+            if (end <= 0) {
+              _sizes.push_back(0);
+              _strides.push_back(0);
+              continue;
+            }
+            if (end > static_cast<long long>(sizes[dim]))
+              end = sizes[dim];
+          } else {
+            if (end < 0)
+              end = -1;
+            if (end >= static_cast<long long>(sizes[dim]) - 1) {
+              _sizes.push_back(0);
+              _strides.push_back(0);
+              continue;
+            }
+          }
+        } else
+          end = step > 0 ? sizes[dim] : -1;
+        if ((step > 0 && beg >= end) || (step < 0 && beg <= end)) {
+          _sizes.push_back(0);
+          _strides.push_back(0);
+          continue;
+        }
+        _sizes.push_back((std::abs(end - beg) - 1) / std::abs(step) + 1);
+        _strides.push_back(step * strides[dim]);
+        _offset += beg * strides[dim];
+      } // like a[-2:]
+    }
+    auto ret = create(
+        dtype, std::make_unique<StridedView>(_sizes, _strides, _offset), data_);
+    if (!requires_grad)
+      return ret;
+    ret->requires_grad = true;
+    ret->grad_fn.reset(new TransposeBack(ret.get(), {shared_from_this()}));
+    share_grad_storage(*ret, *this); // TODO
+    return ret;
+  } else {
+    throw std::runtime_error("Not implemented");
+  }
 }
 
 std::shared_ptr<TensorImpl>
@@ -480,14 +496,15 @@ TensorImpl::transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0,
       dim0 != dim1,
       sformat("dim0 and dim1 must be distinguished. But they are both %lu.",
               dim0));
-  SizeVec _sizes = input->view->sizes;
-  DiffVec _strides = input->view->strides;
+  auto view_s = dynamic_cast<StridedView *>(input->view.get());
+  SizeVec _sizes = view_s->sizes;
+  DiffVec _strides = view_s->strides;
   std::swap(_sizes[dim0], _sizes[dim1]);
   std::swap(_strides[dim0], _strides[dim1]);
-  auto tf = create(
-      input->dtype,
-      std::make_unique<StridedView>(_sizes, _strides, input->view->offset),
-      input->data_);
+  auto tf =
+      create(input->dtype,
+             std::make_unique<StridedView>(_sizes, _strides, view_s->offset),
+             input->data_);
   if (!input->requires_grad)
     return tf;
   tf->requires_grad = true;

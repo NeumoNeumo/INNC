@@ -6,6 +6,8 @@
 
 namespace INNC {
 
+std::string to_string(types t) { return type_to_string_aux_arr[t]; }
+
 std::string innc_type_to_string(NumericType auto num, types t) {
   switch (t) {
   case i8:
@@ -44,10 +46,6 @@ std::string innc_type_to_string(void *ptr, types t) {
     std::cerr << "type not available" << std::endl;
     abort();
   }
-}
-
-std::ostream &operator<<(std::ostream &o, const SizeVec &sv) noexcept {
-  return o << sv.to_string();
 }
 
 std::string SizeVec::to_string() const noexcept {

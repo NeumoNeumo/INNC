@@ -17,7 +17,7 @@ void UntypedStorage::zero_() const noexcept {
   std::memset(blob.get(), 0, size);
 }
 
-uint8_t *UntypedStorage::get_blob() { return blob.get(); }
+uint8_t *UntypedStorage::get_blob() const noexcept { return blob.get(); }
 
 void UntypedStorage::release() noexcept { blob.reset(); }
 

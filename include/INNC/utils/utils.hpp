@@ -2,6 +2,7 @@
 #include "INNC/function.hpp"
 #include "INNC/tensorImpl.hpp"
 #include "INNC/types.hpp"
+#include "INNC/utils/compile_opt.hpp"
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -91,20 +92,24 @@ apply_binary_operator(std::shared_ptr<TensorImpl> lhs,
 // TODO 2: fast path, concurrency, iterator, Broadcasting
 void for_each_sizevec(const SizeVec &range, auto op) {
   [op, &range]() {
-    SizeVec sv;
-    auto last_idx = range.size() - 1;
-    sv.resize(last_idx + 1, 0);
-    while (true) {
-      size_t ptr = last_idx;
-      while (sv[ptr] == range[ptr]) {
-        if (ptr == 0)
-          return;
-        sv[ptr] = 0;
-        ++sv[--ptr];
-      }
-      op(sv);
-      ++sv[last_idx];
-    };
+    if (__LIKELY(range.size() != 0)) {
+      SizeVec sv;
+      auto last_idx = range.size() - 1;
+      sv.resize(last_idx + 1, 0);
+      while (true) {
+        size_t ptr = last_idx;
+        while (sv[ptr] == range[ptr]) {
+          if (ptr == 0)
+            return;
+          sv[ptr] = 0;
+          ++sv[--ptr];
+        }
+        op(sv);
+        ++sv[last_idx];
+      };
+    } else {
+      op(SizeVec{});
+    }
   }();
 }
 

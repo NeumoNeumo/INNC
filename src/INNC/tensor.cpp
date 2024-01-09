@@ -30,7 +30,7 @@ std::string Tensor::to_string() const {
 
 const SizeVec Tensor::size() const { return fptr->view->sizes; }
 
-const DiffVec Tensor::stride() const { return fptr->view->strides; }
+const DiffVec Tensor::stride() const { return fptr->stride(); }
 
 Tensor Tensor::zeros(const SizeVec &size, types t) {
   return Tensor(TensorImpl::zeros(size, t));
@@ -93,10 +93,6 @@ Tensor Tensor::grad() const noexcept {
 
 Tensor Tensor::sum() const {
   auto tf = fptr->sum();
-  if (fptr->requires_grad) {
-    tf->requires_grad = true;
-    tf->grad_fn.reset(new SumBack(tf.get(), {fptr}));
-  }
   return Tensor(tf);
 }
 
