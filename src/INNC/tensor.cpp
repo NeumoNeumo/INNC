@@ -1,11 +1,11 @@
 #include "INNC/dispatcher.hpp"
 #include "INNC/exceptions.hpp"
 #include "INNC/function.hpp"
+#include "INNC/layouts.hpp"
 #include "INNC/storage.hpp"
 #include "INNC/tensorImpl.hpp"
 #include "INNC/types.hpp"
 #include "INNC/utils/traits.hpp"
-#include "INNC/view.hpp"
 #include <cstring>
 #include <queue>
 
@@ -17,7 +17,7 @@ Tensor::Tensor(std::shared_ptr<TensorImpl> tf) : fptr(tf){};
 Tensor &Tensor::operator=(const Tensor &t) = default;
 Tensor &Tensor::operator=(Tensor &&t) = default;
 Tensor::Tensor(const SizeVec &sizes, types dtype)
-    : fptr(TensorImpl::create(dtype, StridedView{sizes})){};
+    : fptr(TensorImpl::create(dtype, StridedLayout{sizes})){};
 Tensor::~Tensor() = default;
 
 void Tensor::backward() { fptr->backward(); }

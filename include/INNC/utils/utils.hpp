@@ -58,7 +58,7 @@ template <typename ForwardType>
 std::shared_ptr<TensorImpl> apply_no_grad_binary_op(const TensorImpl &lhs,
                                                     const TensorImpl &rhs) {
   types lt = INNC::larger_type(lhs.dtype, rhs.dtype);
-  auto ret = INNC::TensorImpl::create(lt, StridedView{lhs.view->sizes});
+  auto ret = INNC::TensorImpl::create(lt, StridedLayout{lhs.view->sizes});
   if (lhs.dtype == lt) {
     ForwardType::dispatch(lhs.dtype, rhs.dtype)(ret.get(), &lhs, &rhs);
   } else {

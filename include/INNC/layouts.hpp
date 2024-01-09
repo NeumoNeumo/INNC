@@ -11,20 +11,20 @@ const char *const layout_to_string_aux_arr[] = {"strided", "sparse"};
 
 std::string to_string(layouts l);
 
-class View {
+class Layout {
 public:
   SizeVec sizes;
-  View();
-  View(const SizeVec &sizes);
-  View(SizeVec &&sizes);
-  virtual ~View();
+  Layout();
+  Layout(const SizeVec &sizes);
+  Layout(SizeVec &&sizes);
+  virtual ~Layout();
   virtual size_t dim() const noexcept;
   virtual size_t numel() const noexcept;
   virtual std::string to_string_from(const UntypedStorage &data_,
                                      types dtype) const = 0;
 };
 
-class StridedView : public View {
+class StridedLayout : public Layout {
   std::string to_string_from_helper(const UntypedStorage &data_, types dtype,
                                     std::ptrdiff_t offset = 0,
                                     size_t depth = 0) const;
@@ -32,13 +32,13 @@ class StridedView : public View {
 public:
   DiffVec strides;
   size_t offset;
-  StridedView();
-  StridedView(const SizeVec &sizes);
-  StridedView(const SizeVec &sizes, const DiffVec &strides);
-  StridedView(const SizeVec &sizes, const DiffVec &strides,
-              const size_t offset);
-  StridedView(const StridedView &sv);
-  StridedView(StridedView &&sv);
+  StridedLayout();
+  StridedLayout(const SizeVec &sizes);
+  StridedLayout(const SizeVec &sizes, const DiffVec &strides);
+  StridedLayout(const SizeVec &sizes, const DiffVec &strides,
+                const size_t offset);
+  StridedLayout(const StridedLayout &sv);
+  StridedLayout(StridedLayout &&sv);
   size_t cnt_from_index(const SizeVec &index) const;
   std::string to_string_from(const UntypedStorage &data_,
                              types dtype) const override;

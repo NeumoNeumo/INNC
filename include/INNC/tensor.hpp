@@ -1,8 +1,8 @@
 #pragma once
 
+#include "INNC/layouts.hpp"
 #include "INNC/storage.hpp"
 #include "INNC/types.hpp"
-#include "INNC/view.hpp"
 
 namespace INNC {
 class TensorImpl;

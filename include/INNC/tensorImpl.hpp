@@ -1,8 +1,8 @@
 #pragma once
 
+#include "INNC/layouts.hpp"
 #include "INNC/storage.hpp"
 #include "INNC/types.hpp"
-#include "INNC/view.hpp"
 
 namespace INNC {
 
@@ -16,11 +16,11 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
   struct Private {};
 
 public:
-  TensorImpl(types dtype, layouts dlayout, const std::shared_ptr<View> &view,
+  TensorImpl(types dtype, layouts dlayout, const std::shared_ptr<Layout> &view,
              const std::shared_ptr<UntypedStorage> &data_, Private);
   const std::shared_ptr<UntypedStorage> data_;
   std::shared_ptr<TensorImpl> grad;
-  const std::shared_ptr<View> view;
+  const std::shared_ptr<Layout> view;
   const types dtype;
   const layouts dlayout;
   bool requires_grad; // TODO 3 stricter encapsulation
@@ -29,14 +29,14 @@ public:
   std::unique_ptr<Backward> grad_fn;
 
   static std::shared_ptr<TensorImpl> create(types dtype,
-                                            const std::shared_ptr<View> &view,
+                                            const std::shared_ptr<Layout> &view,
                                             bool prealloc = true,
                                             layouts dlayout = layouts::strided);
   static std::shared_ptr<TensorImpl>
-  create(types dtype, const std::shared_ptr<View> &view,
+  create(types dtype, const std::shared_ptr<Layout> &view,
          const std::shared_ptr<UntypedStorage> &data_,
          layouts dlayout = layouts::strided);
-  static std::shared_ptr<TensorImpl> create(types dtype, StridedView &&view,
+  static std::shared_ptr<TensorImpl> create(types dtype, StridedLayout &&view,
                                             bool prealloc = true,
                                             layouts dlayout = layouts::strided);
 
