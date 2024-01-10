@@ -10,5 +10,6 @@ const auto ones_like = Tensor::ones_like;
 const auto from_blob = Tensor::from_blob;
 Tensor (*const transpose)(const Tensor &, std::size_t,
                           std::size_t) = Tensor::transpose;
-Tensor (*const reshape)(const Tensor &, const std::initializer_list<int> &) = Tensor::reshape;
+Tensor (*const reshape)(const Tensor &,
+                        const std::initializer_list<int> &) = Tensor::reshape;
 } // namespace INNC

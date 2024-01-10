@@ -139,18 +139,18 @@ TEST(index, transpose) {
 
 TEST(index, reshape) {
   auto a = INNC::from_blob(data_i16_2, {3, 4}, INNC::i16);
-  auto b = INNC::reshape(a, {4,3});
+  auto b = INNC::reshape(a, {4, 3});
   ASSERT_EQ(b.to_string(), "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]");
-  b = a.reshape({2,6});
+  b = a.reshape({2, 6});
   ASSERT_EQ(b.to_string(), "[[0, 1, 2, 3, 4, 5], [6, 7, 8, 9, 10, 11]]");
   auto c = INNC::zeros({12}, INNC::i16);
   b = a.reshape_as(c);
   ASSERT_EQ(b.to_string(), "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]");
-  b = a.reshape({2,-1});
+  b = a.reshape({2, -1});
   ASSERT_EQ(b.to_string(), "[[0, 1, 2, 3, 4, 5], [6, 7, 8, 9, 10, 11]]");
-  ASSERT_THROW(INNC::reshape(a, {6,3}), std::runtime_error);
-  ASSERT_THROW(INNC::reshape(a, {4,-1,-1}), std::runtime_error);
-  ASSERT_THROW(INNC::reshape(a, {7,-1}), std::runtime_error);
+  ASSERT_THROW(INNC::reshape(a, {6, 3}), std::runtime_error);
+  ASSERT_THROW(INNC::reshape(a, {4, -1, -1}), std::runtime_error);
+  ASSERT_THROW(INNC::reshape(a, {7, -1}), std::runtime_error);
 }
 
 TEST(autograd, add) {
@@ -274,6 +274,19 @@ TEST(autograd, transpose) {
   ASSERT_EQ(a.grad().to_string(), c.to_string());
   ASSERT_EQ(c.grad().to_string(), a.to_string());
   ASSERT_EQ(b.grad().to_string(), a.transpose(0, 1).to_string());
+}
+
+TEST(autograd, reshape) {
+  auto a = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f64);
+  auto b = INNC::from_blob(data_i8_1, {6}, INNC::i8).type(INNC::f64);
+  a.requires_grad(true);
+  b.requires_grad(true);
+  auto c = b.reshape({2, 3});
+  c.retain_grad(true);
+  (a * c).sum().backward();
+  ASSERT_EQ(a.grad().to_string(), c.to_string());
+  ASSERT_EQ(c.grad().to_string(), a.to_string());
+  ASSERT_EQ(b.grad().to_string(), a.reshape({-1}).to_string());
 }
 
 TEST(utils, utils) {

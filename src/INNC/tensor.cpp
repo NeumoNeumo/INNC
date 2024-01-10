@@ -102,7 +102,6 @@ Tensor Tensor::operator[](const std::string &slice) {
   return Tensor((*this->fptr)[slice]);
 }
 
-
 Tensor Tensor::transpose(const Tensor &input, size_t dim0, size_t dim1) {
   auto tf = TensorImpl::transpose(input.fptr, dim0, dim1);
   return Tensor(tf);
@@ -113,20 +112,24 @@ Tensor Tensor::transpose(size_t dim0, size_t dim1) {
   return Tensor(tf);
 }
 
-SizeVec initializer_list_to_SizeVec(const std::initializer_list<int> &sizes, size_t numel = 0){
+SizeVec initializer_list_to_SizeVec(const std::initializer_list<int> &sizes,
+                                    size_t numel = 0) {
   std::vector<int> sizes_ = sizes;
   size_t minus_one_exist = false;
   size_t minus_one_index;
-  for (size_t i = 0; i < sizes_.size(); i++){
-    if (sizes_[i] == -1){
-      run_expect(!minus_one_exist, "Cannot have more than two minus ones in size.");
+  for (size_t i = 0; i < sizes_.size(); i++) {
+    if (sizes_[i] == -1) {
+      run_expect(!minus_one_exist,
+                 "Cannot have more than two minus ones in size.");
       minus_one_exist = true;
       minus_one_index = i;
     }
   }
-  if (minus_one_exist){
+  if (minus_one_exist) {
     size_t s = 1;
-    for (size_t i = 0; i < sizes_.size(); i++) if (i != minus_one_index) s *= sizes_[i];
+    for (size_t i = 0; i < sizes_.size(); i++)
+      if (i != minus_one_index)
+        s *= sizes_[i];
     run_expect(numel % s == 0, "The input of sizes and numel is illegal.");
     sizes_[minus_one_index] = numel / s;
   }
@@ -137,15 +140,18 @@ SizeVec initializer_list_to_SizeVec(const std::initializer_list<int> &sizes, siz
   return sizes__;
 }
 
-Tensor Tensor::reshape(const Tensor &input, const std::initializer_list<int> &sizes){
-  auto tf = TensorImpl::reshape(input.fptr, initializer_list_to_SizeVec(sizes, input.fptr->numel()));
+Tensor Tensor::reshape(const Tensor &input,
+                       const std::initializer_list<int> &sizes) {
+  auto tf = TensorImpl::reshape(
+      input.fptr, initializer_list_to_SizeVec(sizes, input.fptr->numel()));
   return tf;
 }
-Tensor Tensor::reshape(const std::initializer_list<int> &sizes){
-  auto tf = TensorImpl::reshape(fptr, initializer_list_to_SizeVec(sizes, numel()));
+Tensor Tensor::reshape(const std::initializer_list<int> &sizes) {
+  auto tf =
+      TensorImpl::reshape(fptr, initializer_list_to_SizeVec(sizes, numel()));
   return tf;
 }
-Tensor Tensor::reshape_as(const Tensor &input){
+Tensor Tensor::reshape_as(const Tensor &input) {
   auto tf = TensorImpl::reshape(fptr, input.size());
   return tf;
 }
