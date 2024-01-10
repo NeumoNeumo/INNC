@@ -49,6 +49,12 @@ public:
    *
    */
   Tensor(const Tensor &t) = delete;
+  Tensor(std::int8_t a);
+  Tensor(std::int16_t a);
+  Tensor(std::int32_t a);
+  Tensor(std::int64_t a);
+  Tensor(float a);
+  Tensor(double a);
   Tensor(Tensor &&t);
   Tensor &operator=(const Tensor &t);
   Tensor &operator=(Tensor &&t);
@@ -79,8 +85,10 @@ public:
   Tensor grad() const noexcept;
   Tensor sum() const;
   void zero_grad() const noexcept;
-  bool is_contiguous() const noexcept; // TODO 2
-  Tensor contiguous() const;           // TODO 2
+  bool is_contiguous() const noexcept;
+  Tensor contiguous() const;
+  Tensor clone() const;
+  Tensor detach() const;
   friend Tensor operator+(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator*(const Tensor &lhs, const Tensor &rhs);
   friend class Backward;

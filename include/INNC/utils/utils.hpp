@@ -92,6 +92,10 @@ apply_binary_operator(std::shared_ptr<TensorImpl> lhs,
 // TODO 2: fast path, concurrency, iterator, Broadcasting
 void for_each_sizevec(const SizeVec &range, auto op) {
   [op, &range]() {
+    for (auto r : range) {
+      if (r == 0)
+        return;
+    }
     if (__LIKELY(range.size() != 0)) {
       SizeVec sv;
       auto last_idx = range.size() - 1;

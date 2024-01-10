@@ -33,6 +33,10 @@ void SumBack::step_back() {
   input_tfs[0]->try_accumulate_grad(TensorImpl::ones_like(*input_tfs[0]).get());
 }
 
-void TransposeBack::step_back() {}
+void NoBack::step_back() { input_tfs[0]->try_accumulate_grad(nullptr); }
+
+void CloneBack::step_back() {
+  input_tfs[0]->try_accumulate_grad(&get_out_grad());
+}
 
 } // namespace INNC

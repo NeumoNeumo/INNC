@@ -39,7 +39,12 @@ public:
   static std::shared_ptr<TensorImpl> create(types dtype, StridedLayout &&view,
                                             bool prealloc = true,
                                             layouts dlayout = layouts::strided);
-
+  static std::shared_ptr<TensorImpl> create(std::int8_t a);
+  static std::shared_ptr<TensorImpl> create(std::int16_t a);
+  static std::shared_ptr<TensorImpl> create(std::int32_t a);
+  static std::shared_ptr<TensorImpl> create(std::int64_t a);
+  static std::shared_ptr<TensorImpl> create(float a);
+  static std::shared_ptr<TensorImpl> create(double a);
   ~TensorImpl();
   static TensorImpl make_stub();
   size_t cnt_from_index(const SizeVec &index) const;
@@ -70,5 +75,9 @@ public:
   friend void check_same_size(const TensorImpl &lhs, const TensorImpl &rhs);
   friend class Backward;
   void backward();
+  bool is_contiguous() const noexcept;
+  std::shared_ptr<TensorImpl> contiguous();
+  std::shared_ptr<TensorImpl> clone();
+  std::shared_ptr<TensorImpl> detach();
 };
 } // namespace INNC

@@ -14,6 +14,13 @@ Tensor::Tensor() = default;
 Tensor::Tensor(Tensor &&t) = default;
 Tensor::Tensor(std::unique_ptr<TensorImpl> &&tf) : fptr(std::move(tf)){};
 Tensor::Tensor(std::shared_ptr<TensorImpl> tf) : fptr(tf){};
+Tensor::Tensor(std::int8_t a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(std::int16_t a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(std::int32_t a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(std::int64_t a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(float a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(double a) : Tensor(TensorImpl::create(a)) {}
+
 Tensor &Tensor::operator=(const Tensor &t) = default;
 Tensor &Tensor::operator=(Tensor &&t) = default;
 Tensor::Tensor(const SizeVec &sizes, types dtype)
@@ -121,5 +128,12 @@ Tensor Tensor::transpose(size_t dim0, size_t dim1) {
   auto tf = TensorImpl::transpose(fptr, dim0, dim1);
   return Tensor(tf);
 }
+
+bool Tensor::is_contiguous() const noexcept { return fptr->is_contiguous(); }
+Tensor Tensor::contiguous() const { return Tensor(fptr->contiguous()); }
+
+Tensor Tensor::clone() const { return Tensor(fptr->clone()); }
+
+Tensor Tensor::detach() const { return Tensor(fptr->detach()); }
 
 } // namespace INNC
