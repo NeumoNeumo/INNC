@@ -70,6 +70,9 @@ public:
   Tensor operator[](const std::string &slice);
   static Tensor transpose(const Tensor &input, size_t dim0, size_t dim1);
   Tensor transpose(size_t dim0, size_t dim1);
+  static Tensor reshape(const Tensor &input, const std::initializer_list<int> &sizes);
+  Tensor reshape(const std::initializer_list<int> &sizes);
+  Tensor reshape_as(const Tensor &input);
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;
   void requires_grad(bool b);

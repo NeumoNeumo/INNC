@@ -512,4 +512,32 @@ TensorImpl::transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0,
   share_grad_storage(*tf, *input);
   return tf;
 }
+
+std::shared_ptr<TensorImpl>
+TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input, const SizeVec &sizes){
+  size_t dim_sizes = 1;
+  for (size_t i = 0; i < sizes.size(); i++) dim_sizes *= sizes[i];
+  auto view_s = dynamic_cast<StridedView *>(input->view.get());
+  run_expect(dim_sizes == input->numel(),
+             sformat("An impossible reshape. The shape of input: (%s), Actual input of reshape: (%s)",
+                     view_s->sizes.to_string(), sizes.to_string()));
+  DiffVec strides;
+  auto sn = sizes.size();
+  if (sn != 0){
+  strides.resize(sn);
+  strides[sn - 1] = 1;
+  for (size_t idx = sn - 1; idx > 0; --idx) {
+    strides[idx - 1] = strides[idx] * sizes[idx];
+  }}
+  auto tf =
+      create(input->dtype,
+             std::make_unique<StridedView>(sizes, strides, view_s->offset),
+             input->data_);
+  if (!input->requires_grad)
+    return tf;
+  tf->requires_grad = true;
+  tf->grad_fn.reset(new ReshapeBack(tf.get(), {input}));
+  share_grad_storage(*tf, *input);
+  return tf;
+}
 } // namespace INNC

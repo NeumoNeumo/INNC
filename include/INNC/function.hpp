@@ -49,4 +49,10 @@ public:
   void step_back() override;
 };
 
+class ReshapeBack : public Backward {
+public:
+  using Backward::Backward;
+  void step_back() override;
+};
+
 } // namespace INNC

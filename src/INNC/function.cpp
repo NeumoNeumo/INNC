@@ -35,4 +35,6 @@ void SumBack::step_back() {
 
 void TransposeBack::step_back() {}
 
+void ReshapeBack::step_back() {}
+
 } // namespace INNC
