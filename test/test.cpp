@@ -331,7 +331,7 @@ TEST(autograd, clone) {
   a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16).type(INNC::f64);
   a.requires_grad(true);
   b = a["::2, :"];
-  char rst0[2][3] = {{0, 1, 2}, {6, 7, 8}};
+  std::int8_t rst0[2][3] = {{0, 1, 2}, {6, 7, 8}};
   ASSERT_EQ(b.to_string(), INNC::from_blob(&rst0, {2, 3}, INNC::i8).type(INNC::f64).to_string());
   auto c = b.clone();
   auto d = INNC::from_blob(data_i16_1, {2,3}, INNC::i16).type(INNC::f64);
@@ -389,7 +389,7 @@ TEST(autograd, reshape) {
   a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16).type(INNC::f64);
   a.requires_grad(true);
   b = a["::2, :"];
-  char rst0[2][3] = {{0, 1, 2}, {6, 7, 8}};
+  std::int8_t rst0[2][3] = {{0, 1, 2}, {6, 7, 8}};
   ASSERT_EQ(b.to_string(), INNC::from_blob(&rst0, {2, 3}, INNC::i8).type(INNC::f64).to_string());
   c = b.reshape({3,2});
   auto d = INNC::from_blob(data_i16_1, {3,2}, INNC::i16).type(INNC::f64);
