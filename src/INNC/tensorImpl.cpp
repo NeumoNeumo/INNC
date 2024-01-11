@@ -627,38 +627,42 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
   }
 
   StridedLayout *view_s = dynamic_cast<StridedLayout *>(input->view.get());
- run_expect(dim_sizes == input->numel(),
+  run_expect(dim_sizes == input->numel(),
              sformat("An impossible reshape. The shape of input: (%s), Actual "
                      "input of reshape: (%s)",
                      view_s->sizes.to_string(), sizes.to_string()));
 
-  if (dim_sizes == 1){
+  if (dim_sizes == 1) {
     DiffVec strides;
     strides.resize(sizes.size());
-    for (size_t i = 0; i < strides.size(); i++) strides[i] = 1;
+    for (size_t i = 0; i < strides.size(); i++)
+      strides[i] = 1;
     auto tf =
-        create(input->dtype, std::make_unique<StridedLayout>(sizes, strides, view_s->offset), input->data_);
+        create(input->dtype,
+               std::make_unique<StridedLayout>(sizes, strides, view_s->offset),
+               input->data_);
     if (!input->requires_grad)
       return tf;
     tf->requires_grad = true;
     tf->grad_fn.reset(new NoBack(tf.get(), {input}));
     share_grad_storage(*tf, *input);
   }
-  
+
   bool data_continuous = true;
   SizeVec sizes_;
   sizes_.resize(view_s->sizes.size());
   DiffVec strides = view_s->strides;
   std::vector<size_t> indexOrder(strides.size());
-    for (size_t i = 0; i < indexOrder.size(); ++i) {
-        indexOrder[i] = i;
-    }
-  std::sort(indexOrder.begin(), indexOrder.end(), [&strides](size_t i, size_t j) { return strides[i] < strides[j]; });
   for (size_t i = 0; i < indexOrder.size(); ++i) {
-        sizes_[indexOrder[i]] = view_s->sizes[indexOrder[i]];
-        strides[indexOrder[i]] = view_s->strides[indexOrder[i]];
+    indexOrder[i] = i;
   }
-  
+  std::sort(indexOrder.begin(), indexOrder.end(),
+            [&strides](size_t i, size_t j) { return strides[i] < strides[j]; });
+  for (size_t i = 0; i < indexOrder.size(); ++i) {
+    sizes_[indexOrder[i]] = view_s->sizes[indexOrder[i]];
+    strides[indexOrder[i]] = view_s->strides[indexOrder[i]];
+  }
+
   for (size_t i = 1; i < strides.size(); i++)
     if (strides[i - 1] != (strides[i] * (long long)sizes_[i]))
       data_continuous = false;

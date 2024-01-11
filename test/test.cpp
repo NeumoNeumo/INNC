@@ -70,7 +70,7 @@ TEST(arithmetic, add) {
   ASSERT_EQ((a + b).type(), INNC::i32);
   ASSERT_EQ((a + (a + b)).to_string(), "[[3, 3, 3], [3, 3, 3]]");
   ASSERT_EQ((a + b).to_string(), "[[2, 2, 2], [2, 2, 2]]");
-  a+=b;
+  a += b;
   ASSERT_EQ(a.to_string(), "[[2, 2, 2], [2, 2, 2]]");
 }
 
@@ -385,16 +385,18 @@ TEST(autograd, reshape) {
   a.requires_grad(true);
   b = a["::2, :"];
   std::int8_t rst0[2][3] = {{0, 1, 2}, {6, 7, 8}};
-  ASSERT_EQ(b.to_string(), INNC::from_blob(&rst0, {2, 3}, INNC::i8).type(INNC::f64).to_string());
-  c = b.reshape({3,2});
+  ASSERT_EQ(
+      b.to_string(),
+      INNC::from_blob(&rst0, {2, 3}, INNC::i8).type(INNC::f64).to_string());
+  c = b.reshape({3, 2});
   c.retain_grad(true);
   b.retain_grad(true);
-  auto d = INNC::from_blob(data_i16_1, {3,2}, INNC::i16).type(INNC::f64);
+  auto d = INNC::from_blob(data_i16_1, {3, 2}, INNC::i16).type(INNC::f64);
   d.requires_grad(true);
   (d * c).sum().backward();
   ASSERT_EQ(d.grad().to_string(), c.to_string());
   ASSERT_EQ(c.grad().to_string(), d.to_string());
-  ASSERT_EQ(b.grad().to_string(), d.reshape({2,3}).to_string());
+  ASSERT_EQ(b.grad().to_string(), d.reshape({2, 3}).to_string());
 }
 
 TEST(utils, utils) {
