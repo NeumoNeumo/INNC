@@ -627,18 +627,23 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
   }
 
   StridedLayout *view_s = dynamic_cast<StridedLayout *>(input->view.get());
+ run_expect(dim_sizes == input->numel(),
+             sformat("An impossible reshape. The shape of input: (%s), Actual "
+                     "input of reshape: (%s)",
+                     view_s->sizes.to_string(), sizes.to_string()));
+
   if (dim_sizes == 1){
     DiffVec strides;
     strides.resize(sizes.size());
     for (size_t i = 0; i < strides.size(); i++) strides[i] = 1;
     auto tf =
         create(input->dtype, std::make_unique<StridedLayout>(sizes, strides, view_s->offset), input->data_);
+    if (!input->requires_grad)
+      return tf;
+    tf->requires_grad = true;
+    tf->grad_fn.reset(new NoBack(tf.get(), {input}));
+    share_grad_storage(*tf, *input);
   }
-
-  run_expect(dim_sizes == input->numel(),
-             sformat("An impossible reshape. The shape of input: (%s), Actual "
-                     "input of reshape: (%s)",
-                     view_s->sizes.to_string(), sizes.to_string()));
   
   bool data_continuous = true;
   SizeVec sizes_;

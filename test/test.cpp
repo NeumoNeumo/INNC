@@ -171,6 +171,7 @@ TEST(index, reshape) {
   ASSERT_THROW(INNC::reshape(a, {6, 3}), std::runtime_error);
   ASSERT_THROW(INNC::reshape(a, {4, -1, -1}), std::runtime_error);
   ASSERT_THROW(INNC::reshape(a, {7, -1}), std::runtime_error);
+  ASSERT_THROW(INNC::reshape(a, {}), std::runtime_error);
   a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
   b = a["::2, :"];
   ASSERT_EQ(b.to_string(), "[[0, 1, 2], [6, 7, 8]]");
@@ -178,6 +179,12 @@ TEST(index, reshape) {
   ASSERT_EQ(c.to_string(), "[0, 1, 2, 6, 7, 8]");
   a = INNC::ones({}, INNC::i8);
   b = INNC::reshape(a, {1});
+  ASSERT_EQ(b.to_string(), "[1]");
+  b = INNC::reshape(a, {1, 1, 1});
+  ASSERT_EQ(b.to_string(), "[[[1]]]");
+  a = INNC::ones({1}, INNC::i8);
+  b = INNC::reshape(a, {});
+  ASSERT_EQ(b.to_string(), "1");
 }
 
 TEST(autograd, add) {
