@@ -650,11 +650,11 @@ std::shared_ptr<TensorImpl> TensorImpl::reshape(const SizeVec &sizes){
 }
 
 std::shared_ptr<TensorImpl> TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input, const DiffVec &sizes) {
-  return TensorImpl::reshape(input, DiffVec_to_SizeVec(sizes));
+  return TensorImpl::reshape(input, DiffVec_to_SizeVec(sizes, input->numel()));
 }
 
 std::shared_ptr<TensorImpl> TensorImpl::reshape(const DiffVec &sizes){
-  return TensorImpl::reshape(shared_from_this(), DiffVec_to_SizeVec(sizes));
+  return TensorImpl::reshape(shared_from_this(), DiffVec_to_SizeVec(sizes, numel()));
 }
 
 std::shared_ptr<TensorImpl> TensorImpl::clone() {
