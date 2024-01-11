@@ -665,7 +665,7 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
     if (!input->requires_grad)
       return tf;
     tf->requires_grad = true;
-    tf->grad_fn.reset(new ReshapeBack(tf.get(), {input}));
+    tf->grad_fn.reset(new NoBack(tf.get(), {input}));
     share_grad_storage(*tf, *input);
     return tf;
   } else {
@@ -675,7 +675,7 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
     if (!input->requires_grad)
       return tf;
     tf->requires_grad = true;
-    tf->grad_fn.reset(new ReshapeBack(tf.get(), {m_tf}));
+    tf->grad_fn.reset(new NoBack(tf.get(), {m_tf}));
     share_grad_storage(*tf, *m_tf);
     return tf;
   }
