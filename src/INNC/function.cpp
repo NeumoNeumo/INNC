@@ -39,6 +39,4 @@ void CloneBack::step_back() {
   input_tfs[0]->try_accumulate_grad(&get_out_grad());
 }
 
-void ReshapeBack::step_back() {}
-
 } // namespace INNC

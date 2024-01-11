@@ -328,6 +328,18 @@ TEST(autograd, clone) {
   rst = rst + rst;
   ASSERT_EQ(a.grad().to_string(), rst.to_string());
   ASSERT_EQ(b.grad().to_string(), INNC::ones_like(b).to_string());
+  a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16).type(INNC::f64);
+  a.requires_grad(true);
+  b = a["::2, :"];
+  char rst0[2][3] = {{0, 1, 2}, {6, 7, 8}};
+  ASSERT_EQ(b.to_string(), INNC::from_blob(&rst0, {2, 3}, INNC::i8).type(INNC::f64).to_string());
+  auto c = b.clone();
+  auto d = INNC::from_blob(data_i16_1, {2,3}, INNC::i16).type(INNC::f64);
+  d.requires_grad(true);
+  (d * c).sum().backward();
+  ASSERT_EQ(d.grad().to_string(), c.to_string());
+  ASSERT_EQ(c.grad().to_string(), d.to_string());
+  ASSERT_EQ(b.grad().to_string(), d.reshape({2,3}).to_string());
 }
 
 TEST(autograd, detach) {
@@ -374,6 +386,18 @@ TEST(autograd, reshape) {
   ASSERT_EQ(a.grad().to_string(), c.to_string());
   ASSERT_EQ(c.grad().to_string(), a.to_string());
   ASSERT_EQ(b.grad().to_string(), a.reshape({-1}).to_string());
+  a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16).type(INNC::f64);
+  a.requires_grad(true);
+  b = a["::2, :"];
+  char rst0[2][3] = {{0, 1, 2}, {6, 7, 8}};
+  ASSERT_EQ(b.to_string(), INNC::from_blob(&rst0, {2, 3}, INNC::i8).type(INNC::f64).to_string());
+  c = b.reshape({3,2});
+  auto d = INNC::from_blob(data_i16_1, {3,2}, INNC::i16).type(INNC::f64);
+  d.requires_grad(true);
+  (d * c).sum().backward();
+  ASSERT_EQ(d.grad().to_string(), c.to_string());
+  ASSERT_EQ(c.grad().to_string(), d.to_string());
+  ASSERT_EQ(b.grad().to_string(), d.reshape({2,3}).to_string());
 }
 
 TEST(utils, utils) {
