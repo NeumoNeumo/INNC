@@ -43,7 +43,13 @@ public:
   void step_back() override;
 };
 
-class TransposeBack : public Backward {
+class NoBack : public Backward {
+public:
+  using Backward::Backward;
+  void step_back() override;
+};
+
+class CloneBack : public Backward {
 public:
   using Backward::Backward;
   void step_back() override;

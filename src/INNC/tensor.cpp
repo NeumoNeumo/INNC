@@ -1,11 +1,11 @@
 #include "INNC/dispatcher.hpp"
 #include "INNC/exceptions.hpp"
 #include "INNC/function.hpp"
+#include "INNC/layouts.hpp"
 #include "INNC/storage.hpp"
 #include "INNC/tensorImpl.hpp"
 #include "INNC/types.hpp"
 #include "INNC/utils/traits.hpp"
-#include "INNC/view.hpp"
 #include <cstring>
 #include <queue>
 
@@ -14,10 +14,17 @@ Tensor::Tensor() = default;
 Tensor::Tensor(Tensor &&t) = default;
 Tensor::Tensor(std::unique_ptr<TensorImpl> &&tf) : fptr(std::move(tf)){};
 Tensor::Tensor(std::shared_ptr<TensorImpl> tf) : fptr(tf){};
+Tensor::Tensor(std::int8_t a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(std::int16_t a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(std::int32_t a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(std::int64_t a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(float a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(double a) : Tensor(TensorImpl::create(a)) {}
+
 Tensor &Tensor::operator=(const Tensor &t) = default;
 Tensor &Tensor::operator=(Tensor &&t) = default;
 Tensor::Tensor(const SizeVec &sizes, types dtype)
-    : fptr(TensorImpl::create(dtype, StridedView{sizes})){};
+    : fptr(TensorImpl::create(dtype, StridedLayout{sizes})){};
 Tensor::~Tensor() = default;
 
 void Tensor::backward() { fptr->backward(); }
@@ -155,5 +162,11 @@ Tensor Tensor::reshape_as(const Tensor &input) {
   auto tf = TensorImpl::reshape(fptr, input.size());
   return tf;
 }
+bool Tensor::is_contiguous() const noexcept { return fptr->is_contiguous(); }
+Tensor Tensor::contiguous() const { return Tensor(fptr->contiguous()); }
+
+Tensor Tensor::clone() const { return Tensor(fptr->clone()); }
+
+Tensor Tensor::detach() const { return Tensor(fptr->detach()); }
 
 } // namespace INNC
