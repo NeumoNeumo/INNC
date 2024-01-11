@@ -392,6 +392,7 @@ TEST(autograd, reshape) {
   std::int8_t rst0[2][3] = {{0, 1, 2}, {6, 7, 8}};
   ASSERT_EQ(b.to_string(), INNC::from_blob(&rst0, {2, 3}, INNC::i8).type(INNC::f64).to_string());
   c = b.reshape({3,2});
+  c.retain_grad(true);
   auto d = INNC::from_blob(data_i16_1, {3,2}, INNC::i16).type(INNC::f64);
   d.requires_grad(true);
   (d * c).sum().backward();
