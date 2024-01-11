@@ -1,4 +1,5 @@
 /.cache/
+/.vscode/
 /build/
 /subprojects/*
 !/subprojects/gtest.wrap

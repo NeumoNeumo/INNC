@@ -13,33 +13,6 @@ std::int16_t data_i16_2[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 INNC::types all_type[6] = {INNC::i8,  INNC::i16, INNC::i32,
                            INNC::i64, INNC::f32, INNC::f64};
 
-std::string string_int_to_double(const std::string &input) {
-  std::stringstream result;
-  std::stringstream num;
-  bool inNumber = false;
-  for (char ch : input) {
-    if (isdigit(ch) || ch == '.') {
-      inNumber = true;
-    } else {
-      if (inNumber) {
-        double x = 0;
-        num >> x;
-        result << std::to_string(x);
-        inNumber = false;
-        num.clear();
-      }
-    }
-    if (inNumber)
-      num << ch;
-    else
-      result << ch;
-  }
-  if (inNumber) {
-    result << std::fixed << std::stoll(result.str());
-  }
-  return result.str();
-}
-
 TEST(basic, initialization) {
   auto a = INNC::zeros({1}, INNC::i16);
   ASSERT_EQ(a.to_string(), "[0]");

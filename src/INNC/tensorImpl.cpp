@@ -582,6 +582,37 @@ std::shared_ptr<TensorImpl> TensorImpl::contiguous() {
   return view->contiguous_from(*this);
 }
 
+SizeVec DiffVec_to_SizeVec(const DiffVec &sizes, size_t numel = 0) {
+  DiffVec sizes_ = sizes;
+  if (sizes_.size() == 0) {
+    run_expect(numel == 1, "You cannot turning a empty DiffVec to SizeVec with (numel != 1).");
+    return {};
+  }
+  size_t minus_one_exist = false;
+  size_t minus_one_index;
+  for (size_t i = 0; i < sizes_.size(); i++) {
+    if (sizes_[i] == -1) {
+      run_expect(!minus_one_exist,
+                 "Cannot have more than two minus ones in size.");
+      minus_one_exist = true;
+      minus_one_index = i;
+    }
+  }
+  if (minus_one_exist) {
+    size_t s = 1;
+    for (size_t i = 0; i < sizes_.size(); i++)
+      if (i != minus_one_index)
+        s *= sizes_[i];
+    run_expect(numel % s == 0, "The input of sizes and numel is illegal.");
+    sizes_[minus_one_index] = numel / s;
+  }
+  SizeVec sizes__;
+  for (size_t i = 0; i < sizes_.size(); i++) {
+    sizes__.push_back(sizes_[i]);
+  }
+  return sizes__;
+}
+
 std::shared_ptr<TensorImpl>
 TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
                     const SizeVec &sizes) {
@@ -613,6 +644,19 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
   share_grad_storage(*tf, *input);
   return tf;
 }
+
+std::shared_ptr<TensorImpl> TensorImpl::reshape(const SizeVec &sizes){
+  return TensorImpl::reshape(shared_from_this(), sizes);
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input, const DiffVec &sizes) {
+  return TensorImpl::reshape(input, DiffVec_to_SizeVec(sizes));
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::reshape(const DiffVec &sizes){
+  return TensorImpl::reshape(shared_from_this(), DiffVec_to_SizeVec(sizes));
+}
+
 std::shared_ptr<TensorImpl> TensorImpl::clone() {
   auto ret = create(dtype, view->sizes);
   tensor_clone_helper::dispatch(dtype, dtype)(ret.get(), this);
