@@ -588,7 +588,7 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
   size_t dim_sizes = 1;
   for (size_t i = 0; i < sizes.size(); i++)
     dim_sizes *= sizes[i];
-  auto view_s = dynamic_cast<StridedView *>(input->view.get());
+  auto view_s = dynamic_cast<StridedLayout *>(input->view.get());
   run_expect(dim_sizes == input->numel(),
              sformat("An impossible reshape. The shape of input: (%s), Actual "
                      "input of reshape: (%s)",
@@ -604,7 +604,7 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
   }
   auto tf =
       create(input->dtype,
-             std::make_unique<StridedView>(sizes, strides, view_s->offset),
+             std::make_unique<StridedLayout>(sizes, strides, view_s->offset),
              input->data_);
   if (!input->requires_grad)
     return tf;
