@@ -176,8 +176,8 @@ TEST(index, reshape) {
   ASSERT_EQ(b.to_string(), "[[0, 1, 2], [6, 7, 8]]");
   c = b.reshape({6});
   ASSERT_EQ(c.to_string(), "[0, 1, 2, 6, 7, 8]");
-  // a = INNC::ones({}, INNC::i8);
-  // b = INNC::reshape(a, {1});
+  a = INNC::ones({}, INNC::i8);
+  b = INNC::reshape(a, {1});
 }
 
 TEST(autograd, add) {
