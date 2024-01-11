@@ -585,7 +585,9 @@ std::shared_ptr<TensorImpl> TensorImpl::contiguous() {
 SizeVec DiffVec_to_SizeVec(const DiffVec &sizes, size_t numel = 0) {
   DiffVec sizes_ = sizes;
   if (sizes_.size() == 0) {
-    run_expect(numel == 1, "You cannot turning a empty DiffVec to SizeVec with (numel != 1).");
+    run_expect(
+        numel == 1,
+        "You cannot turning a empty DiffVec to SizeVec with (numel != 1).");
     return {};
   }
   size_t minus_one_exist = false;
@@ -619,42 +621,79 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
   size_t dim_sizes = 1;
   for (size_t i = 0; i < sizes.size(); i++)
     dim_sizes *= sizes[i];
-  auto view_s = dynamic_cast<StridedLayout *>(input->view.get());
+  if (input->dlayout != layouts::strided) {
+    throw std::logic_error(
+        sformat("This layout %s has not been implemented", layouts::sparse));
+  }
+  StridedLayout *view_s = dynamic_cast<StridedLayout *>(input->view.get());
   run_expect(dim_sizes == input->numel(),
              sformat("An impossible reshape. The shape of input: (%s), Actual "
                      "input of reshape: (%s)",
                      view_s->sizes.to_string(), sizes.to_string()));
-  DiffVec strides;
-  auto sn = sizes.size();
-  if (sn != 0) {
-    strides.resize(sn);
-    strides[sn - 1] = 1;
-    for (size_t idx = sn - 1; idx > 0; --idx) {
-      strides[idx - 1] = strides[idx] * sizes[idx];
+
+  
+  bool data_continuous = true;
+  SizeVec sizes_;
+  sizes_.resize(view_s->sizes.size());
+  DiffVec strides = view_s->strides;
+  std::vector<size_t> indexOrder(strides.size());
+    for (size_t i = 0; i < indexOrder.size(); ++i) {
+        indexOrder[i] = i;
     }
+  std::sort(indexOrder.begin(), indexOrder.end(), [&strides](size_t i, size_t j) { return strides[i] < strides[j]; });
+  for (size_t i = 0; i < indexOrder.size(); ++i) {
+        sizes_[indexOrder[i]] = view_s->sizes[indexOrder[i]];
+        strides[indexOrder[i]] = view_s->strides[indexOrder[i]];
   }
-  auto tf =
-      create(input->dtype,
-             std::make_unique<StridedLayout>(sizes, strides, view_s->offset),
-             input->data_);
-  if (!input->requires_grad)
+  
+  for (size_t i = 1; i < strides.size(); i++)
+    if (strides[i - 1] != (strides[i] * (long long)sizes_[i]))
+      data_continuous = false;
+  if (data_continuous) {
+    auto sn = sizes.size();
+    if (sn != 0) {
+      strides.resize(sn);
+      strides[sn - 1] = view_s->strides[view_s->strides.size() - 1];
+      for (size_t idx = sn - 1; idx > 0; --idx) {
+        strides[idx - 1] = strides[idx] * sizes[idx];
+      }
+    }
+    auto tf =
+        create(input->dtype,
+               std::make_unique<StridedLayout>(sizes, strides, view_s->offset),
+               input->data_);
+    if (!input->requires_grad)
+      return tf;
+    tf->requires_grad = true;
+    tf->grad_fn.reset(new ReshapeBack(tf.get(), {input}));
+    share_grad_storage(*tf, *input);
     return tf;
-  tf->requires_grad = true;
-  tf->grad_fn.reset(new ReshapeBack(tf.get(), {input}));
-  share_grad_storage(*tf, *input);
-  return tf;
+  } else {
+    auto m_tf = input->clone();
+    auto tf =
+        create(input->dtype, make_shared<StridedLayout>(sizes), m_tf->data_);
+    if (!input->requires_grad)
+      return tf;
+    tf->requires_grad = true;
+    tf->grad_fn.reset(new ReshapeBack(tf.get(), {m_tf}));
+    share_grad_storage(*tf, *m_tf);
+    return tf;
+  }
 }
 
-std::shared_ptr<TensorImpl> TensorImpl::reshape(const SizeVec &sizes){
+std::shared_ptr<TensorImpl> TensorImpl::reshape(const SizeVec &sizes) {
   return TensorImpl::reshape(shared_from_this(), sizes);
 }
 
-std::shared_ptr<TensorImpl> TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input, const DiffVec &sizes) {
+std::shared_ptr<TensorImpl>
+TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
+                    const DiffVec &sizes) {
   return TensorImpl::reshape(input, DiffVec_to_SizeVec(sizes, input->numel()));
 }
 
-std::shared_ptr<TensorImpl> TensorImpl::reshape(const DiffVec &sizes){
-  return TensorImpl::reshape(shared_from_this(), DiffVec_to_SizeVec(sizes, numel()));
+std::shared_ptr<TensorImpl> TensorImpl::reshape(const DiffVec &sizes) {
+  return TensorImpl::reshape(shared_from_this(),
+                             DiffVec_to_SizeVec(sizes, numel()));
 }
 
 std::shared_ptr<TensorImpl> TensorImpl::clone() {
