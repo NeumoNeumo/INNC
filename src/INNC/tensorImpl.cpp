@@ -207,11 +207,11 @@ void tensor_clone(TensorImpl *to, const TensorImpl *from) {
   if (to->dlayout != layouts::strided)
     throw std::logic_error(
         sformat("The layout %s of output has not been implemented",
-                to_string(to->dlayout)));
+                to_string(to->dlayout).c_str()));
   if (from->dlayout != layouts::strided)
     throw std::logic_error(
         sformat("The layout %s of input has not been implemented",
-                to_string(from->dlayout)));
+                to_string(from->dlayout).c_str()));
   ToType *to_ptr = reinterpret_cast<ToType *>(to->data_->get_blob());
   FromType *from_ptr = reinterpret_cast<FromType *>(from->data_->get_blob());
   for_each_sizevec(to->view->sizes, [=](const SizeVec &sv) {
@@ -638,7 +638,8 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
   run_expect(numel == input->numel(),
              sformat("An impossible reshape. The shape of input: (%s), Actual "
                      "input of reshape: (%s)",
-                     view_s->sizes.to_string(), sizes.to_string()));
+                     view_s->sizes.to_string().c_str(),
+                     sizes.to_string().c_str()));
 
   if (numel == 1) {
     DiffVec strides;

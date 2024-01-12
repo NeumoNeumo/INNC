@@ -62,7 +62,18 @@ Build From Source
 
    git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/INNC.git
    cd INNC
-   meson setup -Db_sanitize=address build/ && cd build
+   meson setup -Db_sanitize=address -Db_coverage build/ && cd build
+   meson compile -j $(nproc)
+   meson test
+
+If you are going to use `clang`, use the following commands instead.
+
+.. code-block:: bash
+
+   git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/INNC.git
+   cd INNC
+   CC=clang CXX=clang++ meson setup -Db_coverage=true -Db_sanitize=address -Db_lu ndef=false --wipe build
+   cd build
    meson compile -j $(nproc)
    meson test
 
