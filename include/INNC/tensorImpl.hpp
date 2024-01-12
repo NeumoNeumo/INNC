@@ -70,6 +70,7 @@ public:
   static std::shared_ptr<TensorImpl>
   reshape(const std::shared_ptr<TensorImpl> &input, const DiffVec &sizes);
   std::shared_ptr<TensorImpl> reshape(const DiffVec &sizes);
+  std::shared_ptr<TensorImpl> reshape_as(const TensorImpl &sizes);
   std::shared_ptr<TensorImpl> sum();
   void zero_grad() const noexcept;
   friend std::shared_ptr<TensorImpl> operator+(TensorImpl &l, TensorImpl &r);

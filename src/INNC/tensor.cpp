@@ -120,22 +120,22 @@ Tensor Tensor::transpose(size_t dim0, size_t dim1) {
 }
 
 Tensor Tensor::reshape(const Tensor &input, const DiffVec &sizes) {
-  auto tf = TensorImpl::reshape(input.fptr, sizes);
-  return tf;
+  return TensorImpl::reshape(input.fptr, sizes);
 }
+
 Tensor Tensor::reshape(const DiffVec &sizes) {
-  auto tf = TensorImpl::reshape(fptr, sizes);
-  return tf;
+  return TensorImpl::reshape(fptr, sizes);
 }
+
 Tensor Tensor::reshape_as(const Tensor &input) {
-  auto tf = TensorImpl::reshape(fptr, input.size());
-  return tf;
+  return fptr->reshape_as(*input.fptr);
 }
+
 bool Tensor::is_contiguous() const noexcept { return fptr->is_contiguous(); }
+
 Tensor Tensor::contiguous() const { return Tensor(fptr->contiguous()); }
 
 Tensor Tensor::clone() const { return Tensor(fptr->clone()); }
 
 Tensor Tensor::detach() const { return Tensor(fptr->detach()); }
-
 } // namespace INNC

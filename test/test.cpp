@@ -371,16 +371,17 @@ TEST(autograd, contiguous) {
 }
 
 TEST(autograd, reshape) {
-  auto a = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f64);
+  auto a = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f32);
   auto b = INNC::from_blob(data_i8_1, {6}, INNC::i8).type(INNC::f64);
   a.requires_grad(true);
   b.requires_grad(true);
   auto c = b.reshape({2, 3});
   c.retain_grad(true);
   (a * c).sum().backward();
-  ASSERT_EQ(a.grad().to_string(), c.to_string());
-  ASSERT_EQ(c.grad().to_string(), a.to_string());
-  ASSERT_EQ(b.grad().to_string(), a.reshape({-1}).to_string());
+  ASSERT_EQ(a.grad().to_string(), c.type(a.type()).to_string());
+  ASSERT_EQ(c.grad().to_string(), a.type(c.type()).to_string());
+  ASSERT_EQ(b.grad().to_string(), a.reshape({-1}).type(b.type()).to_string());
+  ASSERT_THROW(a.reshape({}), std::runtime_error);
   a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16).type(INNC::f64);
   a.requires_grad(true);
   b = a["::2, :"];
