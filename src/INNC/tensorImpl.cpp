@@ -305,9 +305,18 @@ void TensorImpl::release() noexcept { data_->release(); }
 inline INNC::types TensorImpl::type() const { return this->dtype; }
 
 std::shared_ptr<TensorImpl> TensorImpl::type(types t) {
-  auto tf = create(t, StridedLayout{view->sizes});
-  tensor_to_type_helper::dispatch(t, dtype)(tf.get(), this);
-  return tf;
+  if (requires_grad && is_int(t))
+    throw std::runtime_error(
+        "Cannot cast a tensor that requries grad to a integer tensor.");
+  if (t == dtype)
+    return shared_from_this();
+  auto ret = create(t, StridedLayout{view->sizes});
+  tensor_to_type_helper::dispatch(t, dtype)(ret.get(), this);
+  if (!requires_grad)
+    return ret;
+  ret->requires_grad = true;
+  ret->grad_fn.reset(new CloneBack(ret.get(), {shared_from_this()}));
+  return ret;
 }
 
 void tensor_mul_add_f(TensorImpl &dst, TensorImpl &tf1, TensorImpl &tf2) {

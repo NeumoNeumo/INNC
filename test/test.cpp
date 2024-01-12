@@ -400,6 +400,17 @@ TEST(autograd, reshape) {
   ASSERT_EQ(b.grad().to_string(), d.reshape({2, 3}).to_string());
 }
 
+TEST(autograd, type) {
+  auto a = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f32);
+  auto b = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8).type(INNC::f32);
+  a.requires_grad(true);
+  ASSERT_THROW(a.type(INNC::i64), std::runtime_error);
+  auto c = a.type(INNC::f64);
+  c = c * b;
+  c.sum().backward();
+  ASSERT_EQ(a.grad().to_string(), b.to_string());
+}
+
 TEST(utils, utils) {
   ASSERT_THROW(INNC::sformat("%ls", "123"), std::runtime_error);
 }
