@@ -33,12 +33,12 @@ class StridedLayout : public Layout {
                                     size_t depth = 0) const;
 
 public:
-  DiffVec strides;
+  SignedVec strides;
   size_t offset;
   StridedLayout();
   StridedLayout(const SizeVec &sizes);
-  StridedLayout(const SizeVec &sizes, const DiffVec &strides);
-  StridedLayout(const SizeVec &sizes, const DiffVec &strides,
+  StridedLayout(const SizeVec &sizes, const SignedVec &strides);
+  StridedLayout(const SizeVec &sizes, const SignedVec &strides,
                 const size_t offset);
   StridedLayout(const StridedLayout &sv);
   StridedLayout(StridedLayout &&sv);

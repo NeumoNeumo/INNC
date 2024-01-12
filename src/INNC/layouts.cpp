@@ -3,7 +3,6 @@
 #include "INNC/storage.hpp"
 #include "INNC/tensorImpl.hpp"
 #include "INNC/types.hpp"
-#include <iostream>
 
 namespace INNC {
 
@@ -39,10 +38,10 @@ StridedLayout::StridedLayout(const SizeVec &sizes) : Layout(sizes), offset(0) {
   }
 }
 
-StridedLayout::StridedLayout(const SizeVec &sizes, const DiffVec &strides)
+StridedLayout::StridedLayout(const SizeVec &sizes, const SignedVec &strides)
     : Layout(sizes), strides(strides), offset(0) {}
 
-StridedLayout::StridedLayout(const SizeVec &sizes, const DiffVec &strides,
+StridedLayout::StridedLayout(const SizeVec &sizes, const SignedVec &strides,
                              const size_t offset)
     : Layout(sizes), strides(strides), offset(offset) {}
 

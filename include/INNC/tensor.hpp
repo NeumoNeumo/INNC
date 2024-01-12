@@ -63,7 +63,7 @@ public:
   void backward();
   std::string to_string() const;
   const SizeVec size() const;
-  const DiffVec stride() const;
+  const SignedVec stride() const;
   static Tensor zeros(const SizeVec &size, types t);
   static Tensor ones(const SizeVec &size, types t);
   static Tensor zeros_like(const Tensor &t);
@@ -76,8 +76,8 @@ public:
   Tensor operator[](const std::string &slice);
   static Tensor transpose(const Tensor &input, size_t dim0, size_t dim1);
   Tensor transpose(size_t dim0, size_t dim1);
-  static Tensor reshape(const Tensor &input, const DiffVec &sizes);
-  Tensor reshape(const DiffVec &sizes);
+  static Tensor reshape(const Tensor &input, const SignedVec &sizes);
+  Tensor reshape(const SignedVec &sizes);
   Tensor reshape_as(const Tensor &input);
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;

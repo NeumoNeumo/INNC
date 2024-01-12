@@ -2,12 +2,9 @@
 #include "INNC/exceptions.hpp"
 #include "INNC/function.hpp"
 #include "INNC/layouts.hpp"
-#include "INNC/storage.hpp"
 #include "INNC/tensorImpl.hpp"
 #include "INNC/types.hpp"
 #include "INNC/utils/traits.hpp"
-#include <cstring>
-#include <queue>
 
 namespace INNC {
 Tensor::Tensor() = default;
@@ -37,7 +34,7 @@ std::string Tensor::to_string() const {
 
 const SizeVec Tensor::size() const { return fptr->view->sizes; }
 
-const DiffVec Tensor::stride() const { return fptr->stride(); }
+const SignedVec Tensor::stride() const { return fptr->stride(); }
 
 Tensor Tensor::zeros(const SizeVec &size, types t) {
   return Tensor(TensorImpl::zeros(size, t));
@@ -119,11 +116,11 @@ Tensor Tensor::transpose(size_t dim0, size_t dim1) {
   return Tensor(tf);
 }
 
-Tensor Tensor::reshape(const Tensor &input, const DiffVec &sizes) {
+Tensor Tensor::reshape(const Tensor &input, const SignedVec &sizes) {
   return TensorImpl::reshape(input.fptr, sizes);
 }
 
-Tensor Tensor::reshape(const DiffVec &sizes) {
+Tensor Tensor::reshape(const SignedVec &sizes) {
   return TensorImpl::reshape(fptr, sizes);
 }
 

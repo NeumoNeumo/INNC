@@ -40,12 +40,13 @@ public:
   std::string to_string() const noexcept;
 };
 
-class DiffVec : public std::vector<long long> {
+class SignedVec : public std::vector<long long> {
 public:
-  DiffVec();
-  DiffVec(const std::initializer_list<long long> &init_list);
-  DiffVec(is_same_wo_cvref<std::vector<int>> auto &&vec);
-  friend std::ostream &operator<<(std::ostream &o, const DiffVec &sv) noexcept;
+  SignedVec();
+  SignedVec(const std::initializer_list<long long> &init_list);
+  SignedVec(is_same_wo_cvref<std::vector<int>> auto &&vec);
+  friend std::ostream &operator<<(std::ostream &o,
+                                  const SignedVec &sv) noexcept;
   std::string to_string() const noexcept;
 };
 

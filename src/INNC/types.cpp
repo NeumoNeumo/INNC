@@ -62,7 +62,7 @@ std::string SizeVec::to_string() const noexcept {
   return s + "]";
 }
 
-std::string DiffVec::to_string() const noexcept {
+std::string SignedVec::to_string() const noexcept {
   std::string s = "[";
   bool begin = true;
   for (auto i : *this) {
@@ -82,9 +82,9 @@ SizeVec::SizeVec(const std::initializer_list<size_t> &init_list)
 SizeVec::SizeVec(is_same_wo_cvref<std::vector<int>> auto &&vec)
     : std::vector<size_t>(std::forward<decltype(vec)>(vec)) {}
 
-DiffVec::DiffVec() = default;
-DiffVec::DiffVec(const std::initializer_list<long long> &init_list)
+SignedVec::SignedVec() = default;
+SignedVec::SignedVec(const std::initializer_list<long long> &init_list)
     : std::vector<long long>{init_list} {}
-DiffVec::DiffVec(is_same_wo_cvref<std::vector<int>> auto &&vec)
+SignedVec::SignedVec(is_same_wo_cvref<std::vector<int>> auto &&vec)
     : std::vector<size_t>(std::forward<decltype(vec)>(vec)) {}
 } // namespace INNC

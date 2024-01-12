@@ -23,7 +23,7 @@ size_t TensorImpl::cnt_from_index(const SizeVec &index) const {
         sformat("This layout %s has not been implemented", layouts::sparse));
 }
 
-DiffVec TensorImpl::stride() const {
+SignedVec TensorImpl::stride() const {
   if (typeid(view) == typeid(std::shared_ptr<StridedLayout>)) {
     return dynamic_cast<StridedLayout *>(view.get())->strides;
   } else {
@@ -291,11 +291,8 @@ void check_same_size(const TensorImpl &lhs, const TensorImpl &rhs) {
       }
   } else
     dim_eq = false;
-  if (!dim_eq)
-    std::cerr << "Tensors' dimension must match. Trying to add " +
-                     lsizes.to_string() + " with " + rsizes.to_string()
-              << std::endl
-              << "Broadcasting has not been supported yet.";
+  run_expect(dim_eq, "Tensors' dimension must match. Trying to add ", lsizes,
+             " with ", rsizes, ". Broadcasting has not been supported yet.");
 }
 
 size_t TensorImpl::numel() const noexcept { return view->numel(); }
@@ -445,7 +442,7 @@ std::shared_ptr<TensorImpl> TensorImpl::operator[](const std::string &slice) {
   if (dlayout == layouts::strided) {
     std::vector<std::string> each_dim = ssplit(slice, ',');
     SizeVec _sizes;
-    DiffVec _strides;
+    SignedVec _strides;
     auto view_s = dynamic_cast<StridedLayout *>(view.get());
     auto &sizes = view_s->sizes;
     auto &strides = view_s->strides;
@@ -465,10 +462,9 @@ std::shared_ptr<TensorImpl> TensorImpl::operator[](const std::string &slice) {
         long long idx = std::stoll(split_slice[0]);
         if (idx < 0)
           idx += sizes[dim];
-        run_expect(
-            idx >= 0 && idx < static_cast<long long>(sizes[dim]),
-            sformat("index %d is out of bounds for dimension %lu with size %lu",
-                    idx, dim, sizes[dim]));
+        run_expect(idx >= 0 && idx < static_cast<long long>(sizes[dim]),
+                   "index ", idx, " is out of bounds for dimension ", dim,
+                   " with size ", sizes[dim]);
         _offset += strides[dim] * idx;
       } else { // like a[-2:]
         if (sizes[dim] == 0) {
@@ -559,16 +555,16 @@ TensorImpl::transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0,
                       size_t dim1) {
   auto dim = input->dim();
   run_expect(dim0 >= 0 && dim1 >= 0 && dim0 < dim && dim1 < dim,
-             sformat("Index out of range dimension %lu. Actual input of "
-                     "transpose: (%lu, %lu)",
-                     dim, dim0, dim1));
+             "Index out of range dimension ", dim,
+             ". Actual input of "
+             "transpose: (",
+             dim0, ", ", dim1, ")");
   run_expect(
       dim0 != dim1,
-      sformat("dim0 and dim1 must be distinguished. But they are both %lu.",
-              dim0));
+      sformat("dim0 and dim1 must be distinguished. But they are both ", dim0));
   auto view_s = dynamic_cast<StridedLayout *>(input->view.get());
   SizeVec _sizes = view_s->sizes;
-  DiffVec _strides = view_s->strides;
+  SignedVec _strides = view_s->strides;
   std::swap(_sizes[dim0], _sizes[dim1]);
   std::swap(_strides[dim0], _strides[dim1]);
   auto ret =
@@ -591,8 +587,8 @@ std::shared_ptr<TensorImpl> TensorImpl::contiguous() {
   return view->contiguous_from(*this);
 }
 
-SizeVec DiffVec_to_SizeVec(const DiffVec &sizes, size_t numel = 0) {
-  DiffVec sizes_ = sizes;
+SizeVec DiffVec_to_SizeVec(const SignedVec &sizes, size_t numel = 0) {
+  SignedVec sizes_ = sizes;
   if (sizes_.size() == 0) {
     run_expect(
         numel == 1,
@@ -636,13 +632,13 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
 
   StridedLayout *view_s = dynamic_cast<StridedLayout *>(input->view.get());
   run_expect(numel == input->numel(),
-             sformat("An impossible reshape. The shape of input: (%s), Actual "
-                     "input of reshape: (%s)",
-                     view_s->sizes.to_string().c_str(),
-                     sizes.to_string().c_str()));
+             "An impossible reshape. The shape of input: (", view_s->sizes,
+             "), Actual "
+             "input of reshape: (",
+             sizes, ")");
 
   if (numel == 1) {
-    DiffVec strides;
+    SignedVec strides;
     strides.resize(sizes.size(), 1);
     auto tf =
         create(input->dtype,
@@ -658,7 +654,7 @@ TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
   bool isometry = true;
   SizeVec sizes_;
   sizes_.resize(view_s->dim());
-  DiffVec strides = view_s->strides;
+  SignedVec strides = view_s->strides;
   std::vector<size_t> indexOrder(strides.size());
   for (size_t i = 0; i < indexOrder.size(); ++i)
     indexOrder[i] = i;
@@ -705,11 +701,11 @@ std::shared_ptr<TensorImpl> TensorImpl::reshape(const SizeVec &sizes) {
 
 std::shared_ptr<TensorImpl>
 TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
-                    const DiffVec &sizes) {
+                    const SignedVec &sizes) {
   return TensorImpl::reshape(input, DiffVec_to_SizeVec(sizes, input->numel()));
 }
 
-std::shared_ptr<TensorImpl> TensorImpl::reshape(const DiffVec &sizes) {
+std::shared_ptr<TensorImpl> TensorImpl::reshape(const SignedVec &sizes) {
   return TensorImpl::reshape(shared_from_this(),
                              DiffVec_to_SizeVec(sizes, numel()));
 }
