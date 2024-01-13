@@ -63,6 +63,34 @@ TEST(basic, type) {
   ASSERT_EQ(a.to_string(), "[-3]");
 }
 
+TEST(basic, compare) {
+  auto a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8).type(INNC::i64);
+  auto b = a < 1;
+  char rst_d0[6] = {0, 1, 1, 0, 1, 0};
+  auto rst = INNC::from_blob(rst_d0, {2, 3}, INNC::i8);
+  ASSERT_FALSE(b.all());
+  ASSERT_TRUE((b == rst).all());
+  b = a < 100;
+  ASSERT_TRUE((b == INNC::ones_like(a).type(INNC::i8)).all());
+  b = a > 1;
+  char rst_d1[6] = {0, 0, 0, 1, 0, 1};
+  ASSERT_TRUE((b == INNC::from_blob(rst_d1, {2, 3}, INNC::i8)).all());
+  b = a.type(INNC::f64);
+  ASSERT_TRUE((a == b).all());
+  char rst_d2[6] = {1, 0, 0, 0, 0, 0};
+  ASSERT_TRUE(((a == 1) == INNC::from_blob(rst_d2, {2, 3}, INNC::i8)).all());
+  char rst_d3[6] = {1, 0, 0, 1, 0, 1};
+  ASSERT_TRUE(
+      ((a.type(INNC::f32) >= 1) == INNC::from_blob(rst_d3, {2, 3}, INNC::i8))
+          .all());
+  char rst_d4[6] = {1, 1, 1, 0, 1, 0};
+  ASSERT_TRUE(((a <= 1) == INNC::from_blob(rst_d4, {2, 3}, INNC::i8)).all());
+  char rst_d5[6] = {0, 1, 1, 1, 1, 1};
+  ASSERT_TRUE(
+      ((a.type(INNC::i16) != 1) == INNC::from_blob(rst_d5, {2, 3}, INNC::i8))
+          .all());
+}
+
 TEST(arithmetic, add) {
   auto a = INNC::ones({2, 3}, INNC::i16);
   auto b = INNC::ones({2, 3}, INNC::i32);

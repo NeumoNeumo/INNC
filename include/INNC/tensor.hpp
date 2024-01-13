@@ -1,7 +1,6 @@
 #pragma once
 
 #include "INNC/layouts.hpp"
-#include "INNC/storage.hpp"
 #include "INNC/types.hpp"
 
 namespace INNC {
@@ -92,10 +91,17 @@ public:
   Tensor contiguous() const;
   Tensor clone() const;
   Tensor detach() const;
+  bool all() const;
   friend Tensor operator+(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator-(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator*(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator/(const Tensor &lhs, const Tensor &rhs);
+  friend Tensor operator>(const Tensor &lhs, const Tensor &rhs);
+  friend Tensor operator<(const Tensor &lhs, const Tensor &rhs);
+  friend Tensor operator>=(const Tensor &lhs, const Tensor &rhs);
+  friend Tensor operator<=(const Tensor &lhs, const Tensor &rhs);
+  friend Tensor operator==(const Tensor &lhs, const Tensor &rhs);
+  friend Tensor operator!=(const Tensor &lhs, const Tensor &rhs);
   friend class Backward;
 };
 

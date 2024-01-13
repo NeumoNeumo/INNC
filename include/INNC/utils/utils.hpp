@@ -72,6 +72,21 @@ std::shared_ptr<TensorImpl> apply_no_grad_binary_op(const TensorImpl &lhs,
 
 template <typename ForwardType>
   requires is_valid_forward<ForwardType>
+std::shared_ptr<TensorImpl> apply_cmp_op(const TensorImpl &lhs,
+                                         const TensorImpl &rhs) {
+  types lt = INNC::larger_type(lhs.dtype, rhs.dtype);
+  auto ret = INNC::TensorImpl::create(
+      INNC::i8, StridedLayout{broadcast_range(lhs.size(), rhs.size())});
+  if (lhs.dtype == lt) {
+    ForwardType::dispatch(lhs.dtype, rhs.dtype)(ret.get(), &lhs, &rhs);
+  } else {
+    ForwardType::dispatch(rhs.dtype, lhs.dtype)(ret.get(), &rhs, &lhs);
+  }
+  return ret;
+}
+
+template <typename ForwardType>
+  requires is_valid_forward<ForwardType>
 void apply_no_grad_binary_op(TensorImpl &dst, const TensorImpl &lhs,
                              const TensorImpl &rhs) {
   ForwardType::dispatch(dst.dtype, lhs.dtype, rhs.dtype)(&dst, &lhs, &rhs);

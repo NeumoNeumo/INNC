@@ -79,6 +79,12 @@ public:
   friend std::shared_ptr<TensorImpl> operator-(TensorImpl &l, TensorImpl &r);
   friend std::shared_ptr<TensorImpl> operator*(TensorImpl &l, TensorImpl &r);
   friend std::shared_ptr<TensorImpl> operator/(TensorImpl &l, TensorImpl &r);
+  friend std::shared_ptr<TensorImpl> operator>(TensorImpl &l, TensorImpl &r);
+  friend std::shared_ptr<TensorImpl> operator<(TensorImpl &l, TensorImpl &r);
+  friend std::shared_ptr<TensorImpl> operator>=(TensorImpl &l, TensorImpl &r);
+  friend std::shared_ptr<TensorImpl> operator<=(TensorImpl &l, TensorImpl &r);
+  friend std::shared_ptr<TensorImpl> operator==(TensorImpl &l, TensorImpl &r);
+  friend std::shared_ptr<TensorImpl> operator!=(TensorImpl &l, TensorImpl &r);
   TensorImpl &operator+=(const TensorImpl &rhs);
   void try_accumulate_grad(TensorImpl *tf_w, TensorImpl *tf_o = nullptr);
   friend std::unique_ptr<TensorImpl> no_grad_add(const TensorImpl &lhs,
@@ -90,5 +96,6 @@ public:
   std::shared_ptr<TensorImpl> contiguous();
   std::shared_ptr<TensorImpl> clone();
   std::shared_ptr<TensorImpl> detach();
+  bool all() const;
 };
 } // namespace INNC

@@ -143,4 +143,29 @@ Tensor Tensor::clone() const { return Tensor(fptr->clone()); }
 
 Tensor Tensor::detach() const { return Tensor(fptr->detach()); }
 
+bool Tensor::all() const { return fptr->all(); }
+
+Tensor operator<(const Tensor &lhs, const Tensor &rhs) {
+  return Tensor(*lhs.fptr < *rhs.fptr);
+}
+
+Tensor operator>(const Tensor &lhs, const Tensor &rhs) {
+  return Tensor(*lhs.fptr > *rhs.fptr);
+}
+
+Tensor operator<=(const Tensor &lhs, const Tensor &rhs) {
+  return Tensor(*lhs.fptr <= *rhs.fptr);
+}
+
+Tensor operator>=(const Tensor &lhs, const Tensor &rhs) {
+  return Tensor(*lhs.fptr >= *rhs.fptr);
+}
+
+Tensor operator==(const Tensor &lhs, const Tensor &rhs) {
+  return Tensor(*lhs.fptr == *rhs.fptr);
+}
+
+Tensor operator!=(const Tensor &lhs, const Tensor &rhs) {
+  return Tensor(*lhs.fptr != *rhs.fptr);
+}
 } // namespace INNC
