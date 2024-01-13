@@ -3,6 +3,7 @@
 #include "INNC/types.hpp"
 
 namespace INNC {
+class TensorImpl;
 
 // BEGIN hard-coded variables
 enum layouts { strided, sparse };
@@ -22,6 +23,8 @@ public:
   virtual size_t numel() const noexcept;
   virtual std::string to_string_from(const UntypedStorage &data_,
                                      types dtype) const = 0;
+  virtual bool is_contiguous() = 0;
+  virtual std::shared_ptr<TensorImpl> contiguous_from(TensorImpl &t) = 0;
 };
 
 class StridedLayout : public Layout {
@@ -42,5 +45,7 @@ public:
   size_t cnt_from_index(const SizeVec &index) const;
   std::string to_string_from(const UntypedStorage &data_,
                              types dtype) const override;
+  bool is_contiguous() override;
+  std::shared_ptr<TensorImpl> contiguous_from(TensorImpl &t) override;
 };
 } // namespace INNC

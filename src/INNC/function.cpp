@@ -24,15 +24,29 @@ void AddBack::step_back() {
   input_tfs[1]->try_accumulate_grad(&get_out_grad());
 }
 
+void SubBack::step_back() {
+  input_tfs[0]->try_accumulate_grad(&get_out_grad());
+  input_tfs[1]->try_accumulate_grad(&get_out_grad(),
+                                    TensorImpl::create(-1).get());
+}
+
 void MulBack::step_back() {
   input_tfs[0]->try_accumulate_grad(input_tfs[1].get(), &get_out_grad());
   input_tfs[1]->try_accumulate_grad(input_tfs[0].get(), &get_out_grad());
+}
+
+void DivBack::step_back() {
+  // TODO 1
 }
 
 void SumBack::step_back() {
   input_tfs[0]->try_accumulate_grad(TensorImpl::ones_like(*input_tfs[0]).get());
 }
 
-void TransposeBack::step_back() {}
+void NoBack::step_back() { input_tfs[0]->try_accumulate_grad(nullptr); }
+
+void CloneBack::step_back() {
+  input_tfs[0]->try_accumulate_grad(&get_out_grad());
+}
 
 } // namespace INNC

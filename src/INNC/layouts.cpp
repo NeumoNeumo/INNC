@@ -1,6 +1,7 @@
 #include "INNC/layouts.hpp"
 #include "INNC/exceptions.hpp"
 #include "INNC/storage.hpp"
+#include "INNC/tensorImpl.hpp"
 #include "INNC/types.hpp"
 #include <iostream>
 
@@ -50,7 +51,7 @@ StridedLayout::StridedLayout(const StridedLayout &sv) = default;
 StridedLayout::StridedLayout(StridedLayout &&sv) = default;
 
 size_t StridedLayout::cnt_from_index(const SizeVec &index) const {
-  assertm(index.size() == dim(), "index mismatches sizes");
+  run_expect(index.size() == dim(), "index mismatches sizes");
   size_t pos = offset;
   for (size_t i = 0; i < index.size(); ++i) {
     pos += strides[i] * index[i];
@@ -87,6 +88,20 @@ std::string StridedLayout::to_string_from(const UntypedStorage &data_,
     return INNC::innc_type_to_string(
         data_.get_blob() + offset * INNC::size_of(dtype), dtype);
   return to_string_from_helper(data_, dtype, offset * INNC::size_of(dtype));
+}
+
+bool StridedLayout::is_contiguous() {
+  long long step = 1;
+  for (long int d = dim() - 1; d >= 0; --d) {
+    if (step != strides[d])
+      return false;
+    step *= sizes[d];
+  }
+  return true;
+}
+
+std::shared_ptr<TensorImpl> StridedLayout::contiguous_from(TensorImpl &t) {
+  return t.clone();
 }
 
 } // namespace INNC
