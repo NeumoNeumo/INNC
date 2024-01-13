@@ -93,7 +93,9 @@ public:
   Tensor clone() const;
   Tensor detach() const;
   friend Tensor operator+(const Tensor &lhs, const Tensor &rhs);
+  friend Tensor operator-(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator*(const Tensor &lhs, const Tensor &rhs);
+  friend Tensor operator/(const Tensor &lhs, const Tensor &rhs);
   friend class Backward;
 };
 

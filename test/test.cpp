@@ -2,7 +2,6 @@
 #include "INNC/utils/utils.hpp"
 #include <cstdint>
 #include <gtest/gtest.h>
-#include <iostream>
 #include <string>
 
 std::int8_t data_i8_1[6] = {1, -3, -5, 7, -9, 11};
@@ -70,8 +69,12 @@ TEST(arithmetic, add) {
   ASSERT_EQ((a + b).type(), INNC::i32);
   ASSERT_EQ((a + (a + b)).to_string(), "[[3, 3, 3], [3, 3, 3]]");
   ASSERT_EQ((a + b).to_string(), "[[2, 2, 2], [2, 2, 2]]");
-  a += b;
-  ASSERT_EQ(a.to_string(), "[[2, 2, 2], [2, 2, 2]]");
+  a = 2;
+  b = 4;
+  ASSERT_EQ((a + b).to_string(), "6");
+  a = INNC::ones({1}, INNC::i64);
+  b = INNC::ones({1}, INNC::i32);
+  ASSERT_EQ((a + b).to_string(), "[2]");
 }
 
 TEST(arithmetic, mul) {
@@ -79,6 +82,12 @@ TEST(arithmetic, mul) {
   auto b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16);
   ASSERT_EQ((a * b).to_string(), "[[0, 6, -20], [42, -72, -110]]");
   ASSERT_EQ((a * (a * b)).to_string(), "[[0, -18, 100], [294, 648, -1210]]");
+  a = 2;
+  b = 4;
+  ASSERT_EQ((a * b).to_string(), "8");
+  a = INNC::ones({1}, INNC::i64);
+  b = INNC::ones({1}, INNC::i32);
+  ASSERT_EQ((a + b).to_string(), "[2]");
 }
 
 TEST(arithmetic, sum) {
@@ -88,6 +97,8 @@ TEST(arithmetic, sum) {
   ASSERT_EQ(a.sum().to_string(), "6");
   a = std::int16_t(3);
   ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(3)));
+  a = INNC::ones({1}, INNC::i16);
+  ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(1)));
 }
 
 TEST(index, slice) {

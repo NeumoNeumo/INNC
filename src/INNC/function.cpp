@@ -24,9 +24,19 @@ void AddBack::step_back() {
   input_tfs[1]->try_accumulate_grad(&get_out_grad());
 }
 
+void SubBack::step_back() {
+  input_tfs[0]->try_accumulate_grad(&get_out_grad());
+  input_tfs[1]->try_accumulate_grad(&get_out_grad(),
+                                    TensorImpl::create(-1).get());
+}
+
 void MulBack::step_back() {
   input_tfs[0]->try_accumulate_grad(input_tfs[1].get(), &get_out_grad());
   input_tfs[1]->try_accumulate_grad(input_tfs[0].get(), &get_out_grad());
+}
+
+void DivBack::step_back() {
+  // TODO 1
 }
 
 void SumBack::step_back() {

@@ -74,4 +74,10 @@ concept is_same_wo_cvref = std::is_same_v<std::remove_cvref_t<T>, R>;
 
 template <typename T>
 concept NumericType = std::integral<T> || std::floating_point<T>;
+
+template <typename T>
+concept Iterable = requires(T x) {
+  ++x.begin();
+  x.end();
+};
 } // namespace INNC

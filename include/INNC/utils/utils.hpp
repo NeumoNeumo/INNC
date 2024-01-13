@@ -53,12 +53,15 @@ template <typename T> consteval bool is_valid_forward_func_() {
 template <typename ForwardType>
 concept is_valid_forward = is_valid_forward_func_<ForwardType>();
 
+SizeVec broadcast_range(const SizeVec &u, const SizeVec &v);
+
 template <typename ForwardType>
   requires is_valid_forward<ForwardType>
 std::shared_ptr<TensorImpl> apply_no_grad_binary_op(const TensorImpl &lhs,
                                                     const TensorImpl &rhs) {
   types lt = INNC::larger_type(lhs.dtype, rhs.dtype);
-  auto ret = INNC::TensorImpl::create(lt, StridedLayout{lhs.view->sizes});
+  auto ret = INNC::TensorImpl::create(
+      lt, StridedLayout{broadcast_range(lhs.size(), rhs.size())});
   if (lhs.dtype == lt) {
     ForwardType::dispatch(lhs.dtype, rhs.dtype)(ret.get(), &lhs, &rhs);
   } else {
@@ -80,7 +83,6 @@ template <typename ForwardType, typename BackwardType>
 std::shared_ptr<TensorImpl>
 apply_binary_operator(std::shared_ptr<TensorImpl> lhs,
                       std::shared_ptr<TensorImpl> rhs) {
-  check_same_size(*lhs.get(), *rhs.get());
   auto ret = apply_no_grad_binary_op<ForwardType>(*lhs, *rhs);
   if (!lhs->requires_grad && !rhs->requires_grad)
     return ret;

@@ -32,7 +32,7 @@ std::string Tensor::to_string() const {
   return fptr->to_string();
 }
 
-const SizeVec Tensor::size() const { return fptr->view->sizes; }
+const SizeVec Tensor::size() const { return fptr->size(); }
 
 const SignedVec Tensor::stride() const { return fptr->stride(); }
 
@@ -73,8 +73,16 @@ Tensor operator+(const Tensor &lhs, const Tensor &rhs) {
   return Tensor(*lhs.fptr + *rhs.fptr);
 }
 
+Tensor operator-(const Tensor &lhs, const Tensor &rhs) {
+  return Tensor(*lhs.fptr - *rhs.fptr);
+}
+
 Tensor operator*(const Tensor &lhs, const Tensor &rhs) {
   return Tensor(*lhs.fptr * *rhs.fptr);
+}
+
+Tensor operator/(const Tensor &lhs, const Tensor &rhs) {
+  return Tensor(*lhs.fptr / *rhs.fptr);
 }
 
 bool Tensor::requires_grad() const noexcept { return fptr->requires_grad; }
@@ -129,10 +137,10 @@ Tensor Tensor::reshape_as(const Tensor &input) {
 }
 
 bool Tensor::is_contiguous() const noexcept { return fptr->is_contiguous(); }
-
 Tensor Tensor::contiguous() const { return Tensor(fptr->contiguous()); }
 
 Tensor Tensor::clone() const { return Tensor(fptr->clone()); }
 
 Tensor Tensor::detach() const { return Tensor(fptr->detach()); }
+
 } // namespace INNC

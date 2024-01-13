@@ -48,10 +48,10 @@ std::string innc_type_to_string(void *ptr, types t) {
   }
 }
 
-std::string SizeVec::to_string() const noexcept {
+std::string iter_to_string(const auto &it) {
   std::string s = "[";
   bool begin = true;
-  for (auto i : *this) {
+  for (auto i : it) {
     if (begin) {
       s += std::to_string(i);
       begin = false;
@@ -62,18 +62,20 @@ std::string SizeVec::to_string() const noexcept {
   return s + "]";
 }
 
+std::string SizeVec::to_string() const noexcept {
+  return iter_to_string(*this);
+}
+
 std::string SignedVec::to_string() const noexcept {
-  std::string s = "[";
-  bool begin = true;
-  for (auto i : *this) {
-    if (begin) {
-      s += std::to_string(i);
-      begin = false;
-      continue;
-    }
-    s += ", " + std::to_string(i);
-  }
-  return s + "]";
+  return iter_to_string(*this);
+}
+
+std::ostream &operator<<(std::ostream &o, const SizeVec &sv) noexcept {
+  return o << sv.to_string();
+}
+
+std::ostream &operator<<(std::ostream &o, const SignedVec &sv) noexcept {
+  return o << sv.to_string();
 }
 
 SizeVec::SizeVec() = default;

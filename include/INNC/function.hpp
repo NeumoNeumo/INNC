@@ -31,7 +31,19 @@ public:
   void step_back() override;
 };
 
+class SubBack : public Backward {
+public:
+  using Backward::Backward;
+  void step_back() override;
+};
+
 class MulBack : public Backward {
+public:
+  using Backward::Backward;
+  void step_back() override;
+};
+
+class DivBack : public Backward {
 public:
   using Backward::Backward;
   void step_back() override;

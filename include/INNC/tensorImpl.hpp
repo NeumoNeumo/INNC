@@ -48,6 +48,7 @@ public:
   ~TensorImpl();
   static TensorImpl make_stub();
   size_t cnt_from_index(const SizeVec &index) const;
+  size_t cnt_from_aug_index(const SizeVec &index) const;
   size_t dim() const noexcept;
   std::string to_string() const;
   static std::shared_ptr<TensorImpl> zeros(const SizeVec &sizes, types dtype);
@@ -61,6 +62,7 @@ public:
   INNC::types type() const;
   std::shared_ptr<TensorImpl> type(types t);
   SignedVec stride() const;
+  SizeVec size() const;
   std::shared_ptr<TensorImpl> operator[](const std::string &slice);
   static std::shared_ptr<TensorImpl>
   transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0, size_t dim1);
@@ -74,7 +76,9 @@ public:
   std::shared_ptr<TensorImpl> sum();
   void zero_grad() const noexcept;
   friend std::shared_ptr<TensorImpl> operator+(TensorImpl &l, TensorImpl &r);
+  friend std::shared_ptr<TensorImpl> operator-(TensorImpl &l, TensorImpl &r);
   friend std::shared_ptr<TensorImpl> operator*(TensorImpl &l, TensorImpl &r);
+  friend std::shared_ptr<TensorImpl> operator/(TensorImpl &l, TensorImpl &r);
   TensorImpl &operator+=(const TensorImpl &rhs);
   void try_accumulate_grad(TensorImpl *tf_w, TensorImpl *tf_o = nullptr);
   friend std::unique_ptr<TensorImpl> no_grad_add(const TensorImpl &lhs,

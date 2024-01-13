@@ -15,6 +15,24 @@ namespace INNC {
 
 size_t TensorImpl::dim() const noexcept { return view->dim(); }
 
+size_t TensorImpl::cnt_from_aug_index(const SizeVec &index) const {
+  SizeVec phy_index;
+  auto phy_dim = dim();
+  auto idx_dim = index.size();
+  phy_index.resize(phy_dim);
+  for (size_t i = 1; i <= phy_dim; ++i) {
+    auto s = view->sizes[phy_dim - i];
+    if (__LIKELY(s != 1)) {
+      run_expect(index[idx_dim - i] < s, "the index ", index,
+                 " is out of range ", view->sizes.to_string());
+      phy_index[phy_dim - i] = index[idx_dim - i];
+    } else {
+      phy_index[phy_dim - i] = 0;
+    }
+  }
+  return TensorImpl::cnt_from_index(phy_index);
+}
+
 size_t TensorImpl::cnt_from_index(const SizeVec &index) const {
   if (dlayout == layouts::strided)
     return dynamic_cast<StridedLayout *>(view.get())->cnt_from_index(index);
@@ -22,6 +40,8 @@ size_t TensorImpl::cnt_from_index(const SizeVec &index) const {
     throw std::logic_error(
         sformat("This layout %s has not been implemented", layouts::sparse));
 }
+
+SizeVec TensorImpl::size() const { return view->sizes; }
 
 SignedVec TensorImpl::stride() const {
   if (typeid(view) == typeid(std::shared_ptr<StridedLayout>)) {
@@ -113,10 +133,25 @@ void tensor_add(TensorImpl *dst, const TensorImpl *l, const TensorImpl *r) {
   auto dst_ptr = reinterpret_cast<L *>(dst->data_->get_blob());
   auto l_ptr = reinterpret_cast<L *>(l->data_->get_blob());
   auto r_ptr = reinterpret_cast<R *>(r->data_->get_blob());
-  for_each_sizevec(dst->view->sizes, [=](const SizeVec &sv) {
-    *(dst_ptr + dst->cnt_from_index(sv)) =
-        *(l_ptr + l->cnt_from_index(sv)) + *(r_ptr + r->cnt_from_index(sv));
-  });
+  for_each_sizevec(broadcast_range(l->size(), r->size()),
+                   [=](const SizeVec &sv) {
+                     *(dst_ptr + dst->cnt_from_aug_index(sv)) =
+                         *(l_ptr + l->cnt_from_aug_index(sv)) +
+                         *(r_ptr + r->cnt_from_aug_index(sv));
+                   });
+}
+
+template <typename L, typename R>
+void tensor_sub(TensorImpl *dst, const TensorImpl *l, const TensorImpl *r) {
+  auto dst_ptr = reinterpret_cast<L *>(dst->data_->get_blob());
+  auto l_ptr = reinterpret_cast<L *>(l->data_->get_blob());
+  auto r_ptr = reinterpret_cast<R *>(r->data_->get_blob());
+  for_each_sizevec(broadcast_range(l->size(), r->size()),
+                   [=](const SizeVec &sv) {
+                     *(dst_ptr + dst->cnt_from_aug_index(sv)) =
+                         *(l_ptr + l->cnt_from_aug_index(sv)) -
+                         *(r_ptr + r->cnt_from_aug_index(sv));
+                   });
 }
 
 template <typename L, typename R>
@@ -125,8 +160,21 @@ void tensor_mul(TensorImpl *dst, const TensorImpl *l, const TensorImpl *r) {
   auto l_ptr = reinterpret_cast<L *>(l->data_->get_blob());
   auto r_ptr = reinterpret_cast<R *>(r->data_->get_blob());
   for_each_sizevec(dst->view->sizes, [=](const SizeVec &sv) {
-    *(dst_ptr + dst->cnt_from_index(sv)) =
-        *(l_ptr + l->cnt_from_index(sv)) * *(r_ptr + r->cnt_from_index(sv));
+    *(dst_ptr + dst->cnt_from_aug_index(sv)) =
+        *(l_ptr + l->cnt_from_aug_index(sv)) *
+        *(r_ptr + r->cnt_from_aug_index(sv));
+  });
+}
+
+template <typename L, typename R>
+void tensor_div(TensorImpl *dst, const TensorImpl *l, const TensorImpl *r) {
+  auto dst_ptr = reinterpret_cast<L *>(dst->data_->get_blob());
+  auto l_ptr = reinterpret_cast<L *>(l->data_->get_blob());
+  auto r_ptr = reinterpret_cast<R *>(r->data_->get_blob());
+  for_each_sizevec(dst->view->sizes, [=](const SizeVec &sv) {
+    *(dst_ptr + dst->cnt_from_aug_index(sv)) =
+        *(l_ptr + l->cnt_from_aug_index(sv)) /
+        *(r_ptr + r->cnt_from_aug_index(sv));
   });
 }
 
@@ -220,7 +268,9 @@ void tensor_clone(TensorImpl *to, const TensorImpl *from) {
 }
 
 generate_binary_op_helper(tensor_add);
+generate_binary_op_helper(tensor_sub);
 generate_binary_op_helper(tensor_mul);
+generate_binary_op_helper(tensor_div);
 generate_unary_op_helper(tensor_fill);
 generate_unary_op_helper(tensor_to_type);
 generate_unary_op_helper(tensor_sum);
@@ -232,8 +282,18 @@ std::shared_ptr<TensorImpl> operator+(TensorImpl &l, TensorImpl &r) {
       l.shared_from_this(), r.shared_from_this());
 }
 
+std::shared_ptr<TensorImpl> operator-(TensorImpl &l, TensorImpl &r) {
+  return apply_binary_operator<tensor_sub_helper, SubBack>(
+      l.shared_from_this(), r.shared_from_this());
+}
+
 std::shared_ptr<TensorImpl> operator*(TensorImpl &l, TensorImpl &r) {
   return apply_binary_operator<tensor_mul_helper, MulBack>(
+      l.shared_from_this(), r.shared_from_this());
+}
+
+std::shared_ptr<TensorImpl> operator/(TensorImpl &l, TensorImpl &r) {
+  return apply_binary_operator<tensor_div_helper, DivBack>(
       l.shared_from_this(), r.shared_from_this());
 }
 
@@ -579,14 +639,6 @@ TensorImpl::transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0,
   return ret;
 }
 
-bool TensorImpl::is_contiguous() const noexcept {
-  return view->is_contiguous();
-}
-
-std::shared_ptr<TensorImpl> TensorImpl::contiguous() {
-  return view->contiguous_from(*this);
-}
-
 SizeVec DiffVec_to_SizeVec(const SignedVec &sizes, size_t numel = 0) {
   SignedVec sizes_ = sizes;
   if (sizes_.size() == 0) {
@@ -712,6 +764,14 @@ std::shared_ptr<TensorImpl> TensorImpl::reshape(const SignedVec &sizes) {
 
 std::shared_ptr<TensorImpl> TensorImpl::reshape_as(const TensorImpl &t) {
   return TensorImpl::reshape(shared_from_this(), t.view->sizes);
+}
+
+bool TensorImpl::is_contiguous() const noexcept {
+  return view->is_contiguous();
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::contiguous() {
+  return view->contiguous_from(*this);
 }
 
 std::shared_ptr<TensorImpl> TensorImpl::clone() {
