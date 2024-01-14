@@ -68,6 +68,8 @@ public:
   static Tensor zeros_like(const Tensor &t);
   static Tensor ones_like(const Tensor &t);
   static Tensor from_blob(void *data, const SizeVec &sizes, types dtype);
+  static Tensor randn(const SizeVec &sizes, types dtype);
+  static Tensor randn_like(const Tensor &t);
   size_t numel() const noexcept;
   void release() noexcept;
   INNC::types type() const;

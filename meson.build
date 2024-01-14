@@ -20,6 +20,7 @@ libINNC = library('INNC',
   'src/INNC/types.cpp',
   'src/INNC/layouts.cpp',
   'src/INNC/utils/utils.cpp',
+  'src/INNC/utils/rand.cpp',
   include_directories: incdir,
 )
 

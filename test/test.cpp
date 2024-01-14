@@ -453,3 +453,7 @@ TEST(autograd, type) {
 TEST(utils, utils) {
   ASSERT_THROW(INNC::sformat("%ls", "123"), std::runtime_error);
 }
+
+TEST(utils, randn) {
+  ASSERT_THROW(INNC::Tensor::randn({3, 5}, INNC::i8), std::runtime_error);
+}

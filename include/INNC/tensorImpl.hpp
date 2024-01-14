@@ -57,6 +57,8 @@ public:
   static std::shared_ptr<TensorImpl> ones_like(const TensorImpl &t);
   static std::shared_ptr<TensorImpl> from_blob(void *data, const SizeVec &sizes,
                                                types dtype);
+  static std::shared_ptr<TensorImpl> randn(const SizeVec &sizes, types dtype);
+  static std::shared_ptr<TensorImpl> randn_like(const TensorImpl &t);
   size_t numel() const noexcept;
   void release() noexcept;
   INNC::types type() const;

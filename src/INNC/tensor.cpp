@@ -168,4 +168,13 @@ Tensor operator==(const Tensor &lhs, const Tensor &rhs) {
 Tensor operator!=(const Tensor &lhs, const Tensor &rhs) {
   return Tensor(*lhs.fptr != *rhs.fptr);
 }
+
+Tensor Tensor::randn(const SizeVec &sizes, types dtype){
+  return Tensor(TensorImpl::randn(sizes, dtype));
+}
+
+Tensor Tensor::randn_like(const Tensor &t){
+  return Tensor(TensorImpl::randn_like(*t.fptr));
+}
+
 } // namespace INNC

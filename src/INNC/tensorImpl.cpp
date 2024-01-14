@@ -8,6 +8,7 @@
 #include "INNC/utils/compile_opt.hpp"
 #include "INNC/utils/traits.hpp"
 #include "INNC/utils/utils.hpp"
+#include "INNC/utils/rand.hpp"
 #include <cstring>
 #include <queue>
 
@@ -741,7 +742,7 @@ TensorImpl::transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0,
   return ret;
 }
 
-SizeVec DiffVec_to_SizeVec(const SignedVec &sizes, size_t numel = 0) {
+SizeVec regularize_size(const SignedVec &sizes, size_t numel = 0) {
   SignedVec sizes_ = sizes;
   if (sizes_.size() == 0) {
     run_expect(
@@ -856,12 +857,12 @@ std::shared_ptr<TensorImpl> TensorImpl::reshape(const SizeVec &sizes) {
 std::shared_ptr<TensorImpl>
 TensorImpl::reshape(const std::shared_ptr<TensorImpl> &input,
                     const SignedVec &sizes) {
-  return TensorImpl::reshape(input, DiffVec_to_SizeVec(sizes, input->numel()));
+  return TensorImpl::reshape(input, regularize_size(sizes, input->numel()));
 }
 
 std::shared_ptr<TensorImpl> TensorImpl::reshape(const SignedVec &sizes) {
   return TensorImpl::reshape(shared_from_this(),
-                             DiffVec_to_SizeVec(sizes, numel()));
+                             regularize_size(sizes, numel()));
 }
 
 std::shared_ptr<TensorImpl> TensorImpl::reshape_as(const TensorImpl &t) {
@@ -921,5 +922,31 @@ bool TensorImpl::all() const {
     throw std::logic_error(
         "Layouts except StridedLayout have not been implemented yet.");
   }
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::randn(const SizeVec &sizes, types dtype){
+  run_expect(INNC::is_float(dtype), "Tensors with integer type ",
+             INNC::to_string(dtype)," cannot be generated from a normal distribution");
+  if(dtype == INNC::f32){
+    std::normal_distribution<float> gen_norm{};
+    auto ret = create(INNC::f32, StridedLayout{sizes});
+    auto dptr = reinterpret_cast<float*>(ret->data_->get_blob());
+    for(size_t i = 0; i < ret->numel(); ++i){
+      *(dptr + i) = gen_norm(rng);
+    }
+    return ret;
+  }else{
+    std::normal_distribution<double> gen_norm{};
+    auto ret = create(INNC::f32, StridedLayout{sizes});
+    auto dptr = reinterpret_cast<double*>(ret->data_->get_blob());
+    for(size_t i = 0; i < ret->numel(); ++i){
+      *(dptr + i) = gen_norm(rng);
+    }
+    return ret;
+  }
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::randn_like(const TensorImpl &t){
+  return randn(t.size(), t.dtype);
 }
 } // namespace INNC
