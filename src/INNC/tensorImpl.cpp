@@ -1014,6 +1014,11 @@ TensorImpl::cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
   }
 
   // autograd
+  if (!requires_grad)
+    return ret;
+  ret->requires_grad = true;
+  ret->grad_fn.reset(new CloneBack(ret.get(), {shared_from_this()}));
+  return ret;
 
   return ret;
 }
