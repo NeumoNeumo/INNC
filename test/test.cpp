@@ -226,6 +226,13 @@ TEST(index, reshape) {
   ASSERT_EQ(b.to_string(), "1");
 }
 
+TEST(index, cat){
+  auto a = INNC::from_blob(data_i16_2, {3, 4}, INNC::i16);
+  auto b = INNC::Tensor::cat({a,a,a});
+  ASSERT_EQ(b.to_string(), "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]");
+
+}
+
 TEST(autograd, add) {
   auto a = INNC::ones({2, 3}, INNC::f64);
   auto b = INNC::ones({2, 3}, INNC::f32);
