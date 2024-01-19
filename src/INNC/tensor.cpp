@@ -169,21 +169,20 @@ Tensor operator!=(const Tensor &lhs, const Tensor &rhs) {
   return Tensor(*lhs.fptr != *rhs.fptr);
 }
 
-Tensor Tensor::randn(const SizeVec &sizes, types dtype){
+Tensor Tensor::randn(const SizeVec &sizes, types dtype) {
   return Tensor(TensorImpl::randn(sizes, dtype));
 }
 
-Tensor Tensor::randn_like(const Tensor &t){
+Tensor Tensor::randn_like(const Tensor &t) {
   return Tensor(TensorImpl::randn_like(*t.fptr));
 }
 
-Tensor
-  Tensor::cat(const std::vector<Tensor> &input_tfs, const size_t dim){
-    std::vector<std::shared_ptr<INNC::TensorImpl>> input_tfs_;
-    for (size_t i = 0; i < input_tfs.size(); i++){
-      input_tfs_.push_back(input_tfs[i].fptr);
-    }
-    return Tensor(TensorImpl::cat(input_tfs_, dim));
+Tensor Tensor::cat(const std::vector<Tensor> &input_tfs, const size_t dim) {
+  std::vector<std::shared_ptr<INNC::TensorImpl>> input_tfs_;
+  for (size_t i = 0; i < input_tfs.size(); i++) {
+    input_tfs_.push_back(input_tfs[i].fptr);
   }
+  return Tensor(TensorImpl::cat(input_tfs_, dim));
+}
 
 } // namespace INNC

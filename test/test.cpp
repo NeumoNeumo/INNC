@@ -226,7 +226,7 @@ TEST(index, reshape) {
   ASSERT_EQ(b.to_string(), "1");
 }
 
-TEST(index, cat){
+TEST(index, cat) {
   auto a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
   std::vector<INNC::Tensor> input;
   input.resize(3);
@@ -234,9 +234,14 @@ TEST(index, cat){
   input[1] = a;
   input[2] = a;
   auto b = INNC::Tensor::cat(input);
-  ASSERT_EQ(b.to_string(), "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]");
+  ASSERT_EQ(
+      b.to_string(),
+      "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], "
+      "[6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]");
   b = INNC::Tensor::cat(input, 1);
-  ASSERT_EQ(b.to_string(), "[[0, 1, 2, 0, 1, 2, 0, 1, 2], [3, 4, 5, 3, 4, 5, 3, 4, 5], [6, 7, 8, 6, 7, 8, 6, 7, 8], [9, 10, 11, 9, 10, 11, 9, 10, 11]]");
+  ASSERT_EQ(b.to_string(),
+            "[[0, 1, 2, 0, 1, 2, 0, 1, 2], [3, 4, 5, 3, 4, 5, 3, 4, 5], [6, 7, "
+            "8, 6, 7, 8, 6, 7, 8], [9, 10, 11, 9, 10, 11, 9, 10, 11]]");
 
   a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
   b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::types::i8);
@@ -244,7 +249,8 @@ TEST(index, cat){
   input[0] = a;
   input[1] = b;
   auto c = INNC::Tensor::cat(input);
-  ASSERT_EQ(c.to_string(), "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, -2, 4], [6, 8, -10]]");
+  ASSERT_EQ(c.to_string(), "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, "
+                           "-2, 4], [6, 8, -10]]");
 
   a = INNC::from_blob(data_i16_2, {3, 4}, INNC::i16);
   b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16);
@@ -478,7 +484,7 @@ TEST(autograd, type) {
   ASSERT_EQ(a.grad().to_string(), b.to_string());
 }
 
-TEST(autograd, cat){
+TEST(autograd, cat) {
   auto a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16).type(INNC::f32);
   auto c = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f32);
   std::vector<INNC::Tensor> input;

@@ -6,9 +6,9 @@
 #include "INNC/storage.hpp"
 #include "INNC/types.hpp"
 #include "INNC/utils/compile_opt.hpp"
+#include "INNC/utils/rand.hpp"
 #include "INNC/utils/traits.hpp"
 #include "INNC/utils/utils.hpp"
-#include "INNC/utils/rand.hpp"
 #include <cstring>
 #include <queue>
 
@@ -944,37 +944,40 @@ bool TensorImpl::all() const {
   }
 }
 
-std::shared_ptr<TensorImpl> TensorImpl::randn(const SizeVec &sizes, types dtype){
+std::shared_ptr<TensorImpl> TensorImpl::randn(const SizeVec &sizes,
+                                              types dtype) {
   run_expect(INNC::is_float(dtype), "Tensors with integer type ",
-             INNC::to_string(dtype)," cannot be generated from a normal distribution");
-  if(dtype == INNC::f32){
+             INNC::to_string(dtype),
+             " cannot be generated from a normal distribution");
+  if (dtype == INNC::f32) {
     std::normal_distribution<float> gen_norm{};
     auto ret = create(INNC::f32, StridedLayout{sizes});
-    auto dptr = reinterpret_cast<float*>(ret->data_->get_blob());
-    for(size_t i = 0; i < ret->numel(); ++i){
+    auto dptr = reinterpret_cast<float *>(ret->data_->get_blob());
+    for (size_t i = 0; i < ret->numel(); ++i) {
       *(dptr + i) = gen_norm(rng);
     }
     return ret;
-  }else{
+  } else {
     std::normal_distribution<double> gen_norm{};
     auto ret = create(INNC::f32, StridedLayout{sizes});
-    auto dptr = reinterpret_cast<double*>(ret->data_->get_blob());
-    for(size_t i = 0; i < ret->numel(); ++i){
+    auto dptr = reinterpret_cast<double *>(ret->data_->get_blob());
+    for (size_t i = 0; i < ret->numel(); ++i) {
       *(dptr + i) = gen_norm(rng);
     }
     return ret;
   }
 }
 
-std::shared_ptr<TensorImpl> TensorImpl::randn_like(const TensorImpl &t){
+std::shared_ptr<TensorImpl> TensorImpl::randn_like(const TensorImpl &t) {
   return randn(t.size(), t.dtype);
 }
 
 std::shared_ptr<TensorImpl>
 TensorImpl::cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
-    const size_t dim) {
+                const size_t dim) {
   run_expect(input_tfs.size() >= 2, "You cannot cat a tensor to nothing.");
-  run_expect(dim >= 0 && dim < input_tfs[0]->dim(), "you give out a illegal dim");
+  run_expect(dim >= 0 && dim < input_tfs[0]->dim(),
+             "you give out a illegal dim");
   for (size_t i = 1; i < input_tfs.size(); i++) {
     run_expect(input_tfs[0]->view->sizes.size() ==
                    input_tfs[i]->view->sizes.size(),
@@ -1009,12 +1012,14 @@ TensorImpl::cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
   size_t s_offset = 0;
   for (size_t i = 0; i < input_tfs.size(); i++) {
     tensor_cat_helper::dispatch(dtype, input_tfs[i]->dtype)(
-        ret.get(), input_tfs[i].get(), s_offset * dynamic_cast<StridedLayout *>(ret->view.get())->strides[dim]);
+        ret.get(), input_tfs[i].get(),
+        s_offset *
+            dynamic_cast<StridedLayout *>(ret->view.get())->strides[dim]);
     s_offset += input_tfs[i]->view->sizes[dim];
   }
 
   bool requires_grad = false;
-  for (size_t i = 0; i < input_tfs.size(); i++){
+  for (size_t i = 0; i < input_tfs.size(); i++) {
     requires_grad |= input_tfs[i]->requires_grad;
   }
   // autograd

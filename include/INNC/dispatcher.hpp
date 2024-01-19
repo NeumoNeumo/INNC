@@ -80,7 +80,7 @@ namespace INNC {
     }                                                                          \
   };
 
-  // cat
+// cat
 #define generate_unary_offset_op_helper(op)                                    \
   class op##_helper {                                                          \
     constexpr static void (*spec_list[types::Count][types::Count])(            \
@@ -107,6 +107,5 @@ namespace INNC {
   public:                                                                      \
     static auto dispatch(types l_t, types r_t) { return spec_list[l_t][r_t]; } \
   }
-
 
 } // namespace INNC

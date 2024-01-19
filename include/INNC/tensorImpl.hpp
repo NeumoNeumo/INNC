@@ -77,7 +77,7 @@ public:
   std::shared_ptr<TensorImpl> reshape_as(const TensorImpl &sizes);
   static std::shared_ptr<TensorImpl>
   cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
-    const size_t dim);
+      const size_t dim);
   std::shared_ptr<TensorImpl> sum();
   void zero_grad() const noexcept;
   friend std::shared_ptr<TensorImpl> operator+(TensorImpl &l, TensorImpl &r);
