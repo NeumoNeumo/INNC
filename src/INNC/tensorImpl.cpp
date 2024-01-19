@@ -11,7 +11,6 @@
 #include "INNC/utils/rand.hpp"
 #include <cstring>
 #include <queue>
-#include <iostream>
 
 namespace INNC {
 
@@ -975,6 +974,7 @@ std::shared_ptr<TensorImpl>
 TensorImpl::cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
     const size_t dim) {
   run_expect(input_tfs.size() >= 2, "You cannot cat a tensor to nothing.");
+  run_expect(dim >= 0 && dim < input_tfs[0]->dim(), "you give out a illegal dim");
   for (size_t i = 1; i < input_tfs.size(); i++) {
     run_expect(input_tfs[0]->view->sizes.size() ==
                    input_tfs[i]->view->sizes.size(),
@@ -1013,11 +1013,15 @@ TensorImpl::cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
     s_offset += input_tfs[i]->view->sizes[dim];
   }
 
+  bool requires_grad = false;
+  for (size_t i = 0; i < input_tfs.size(); i++){
+    requires_grad |= input_tfs[i]->requires_grad;
+  }
   // autograd
   if (!requires_grad)
     return ret;
   ret->requires_grad = true;
-  ret->grad_fn.reset(new CloneBack(ret.get(), {shared_from_this()}));
+  ret->grad_fn.reset(new CatBack(ret.get(), input_tfs, dim));
   return ret;
 
   return ret;

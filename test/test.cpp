@@ -235,6 +235,8 @@ TEST(index, cat){
   input[2] = a;
   auto b = INNC::Tensor::cat(input);
   ASSERT_EQ(b.to_string(), "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]");
+  b = INNC::Tensor::cat(input, 1);
+  ASSERT_EQ(b.to_string(), "[[0, 1, 2, 0, 1, 2, 0, 1, 2], [3, 4, 5, 3, 4, 5, 3, 4, 5], [6, 7, 8, 6, 7, 8, 6, 7, 8], [9, 10, 11, 9, 10, 11, 9, 10, 11]]");
 
   a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
   b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::types::i8);
@@ -474,6 +476,25 @@ TEST(autograd, type) {
   c = c * b;
   c.sum().backward();
   ASSERT_EQ(a.grad().to_string(), b.to_string());
+}
+
+TEST(autograd, cat){
+  auto a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16).type(INNC::f32);
+  auto c = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f32);
+  std::vector<INNC::Tensor> input;
+  a.requires_grad(true);
+  c.requires_grad(true);
+  input.resize(3);
+  input[0] = a;
+  input[1] = c;
+  input[2] = a;
+  auto b = INNC::Tensor::cat(input);
+  b.retain_grad(true);
+  b.sum().backward();
+  auto d = INNC::ones({10, 3}, INNC::f32);
+  ASSERT_EQ(b.grad().to_string(), d.to_string());
+  d = INNC::ones({4, 3}, INNC::f32) * 2;
+  ASSERT_EQ(a.grad().to_string(), d.to_string());
 }
 
 TEST(utils, utils) {

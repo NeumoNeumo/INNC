@@ -68,8 +68,10 @@ public:
 };
 
 class CatBack : public Backward {
+  size_t dim;
 public:
-  using Backward::Backward;
+  CatBack(TensorImpl *this_tf,
+           const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs, const size_t dim = 0);
   void step_back() override;
 };
 
