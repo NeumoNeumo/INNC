@@ -4,7 +4,7 @@
 #include <sstream>
 #define assertm(exp, msg) assert(((void)(msg), exp))
 
-template <typename... Args> void run_expect(bool expr, const Args &...args) {
+template <typename... Args> void run_expect(bool expr, const Args &... args) {
   if (expr)
     return;
   std::stringstream ss;

@@ -131,6 +131,13 @@ Tensor Tensor::transpose(size_t dim0, size_t dim1) {
   return Tensor(tf);
 }
 
+Tensor Tensor::permute(const Tensor &input, const SizeVec dims) {
+  return TensorImpl::permute(input.fptr, dims);
+}
+Tensor Tensor::permute(const SizeVec dims) {
+  return TensorImpl::permute(fptr, dims);
+}
+
 Tensor Tensor::reshape(const Tensor &input, const SignedVec &sizes) {
   return TensorImpl::reshape(input.fptr, sizes);
 }

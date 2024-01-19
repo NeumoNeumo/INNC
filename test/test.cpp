@@ -281,6 +281,22 @@ TEST(index, transpose) {
   b = INNC::from_blob(f64_arr, {2, 3}, INNC::f64);
   ASSERT_EQ(a.to_string(), b.to_string());
   ASSERT_EQ(a.transpose(0, 1).transpose(0, 1).to_string(), a.to_string());
+  
+  a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
+  b = INNC::transpose(a, 0, 1);
+  ASSERT_EQ(b.to_string(), "[[0, 3, 6, 9], [1, 4, 7, 10], [2, 5, 8, 11]]");
+  a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
+  b = a.permute(a, {0, 1});
+  ASSERT_EQ(b.to_string(), "[[1, 7], [-3, -9], [-5, 11]]");
+  a = INNC::from_blob(data_i16_2, {2, 3, 2}, INNC::i16);
+  b = INNC::Tensor::permute(a, {0, 2});
+  ASSERT_EQ(b.to_string(),
+            "[[[0, 6], [2, 8], [4, 10]], [[1, 7], [3, 9], [5, 11]]]");
+  a = INNC::from_blob(data_i8_1, {3, 2}, INNC::i8).type(INNC::f64);
+  a = a.permute({0, 1});
+  b = INNC::from_blob(f64_arr, {2, 3}, INNC::f64);
+  ASSERT_EQ(a.to_string(), b.to_string());
+  ASSERT_EQ(a.permute({0, 1}).permute({0, 1}).to_string(), a.to_string());
 }
 
 TEST(index, reshape) {

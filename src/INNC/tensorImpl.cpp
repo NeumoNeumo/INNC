@@ -541,6 +541,19 @@ TensorImpl::transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0,
   return ret;
 }
 
+std::shared_ptr<TensorImpl> TensorImpl::transpose(size_t dim0, size_t dim1) {
+  return TensorImpl::transpose(shared_from_this(), dim0, dim1);
+}
+std::shared_ptr<TensorImpl>
+TensorImpl::permute(const std::shared_ptr<TensorImpl> &input,
+                    const SizeVec dims) {
+  run_expect(dims.size() == 2, "the size of dims for permute must have dim 2.");
+  return TensorImpl::transpose(input, dims[0], dims[1]);
+}
+std::shared_ptr<TensorImpl> TensorImpl::permute(const SizeVec dims) {
+  return TensorImpl::permute(shared_from_this(), dims);
+}
+
 SizeVec regularize_size(const SignedVec &sizes, size_t numel = 0) {
   SignedVec sizes_ = sizes;
   if (sizes_.size() == 0) {

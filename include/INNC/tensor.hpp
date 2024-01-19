@@ -77,6 +77,8 @@ public:
   Tensor operator[](const std::string &slice);
   static Tensor transpose(const Tensor &input, size_t dim0, size_t dim1);
   Tensor transpose(size_t dim0, size_t dim1);
+  static Tensor permute(const Tensor &input, const SizeVec dims);
+  Tensor permute(const SizeVec dims);
   static Tensor reshape(const Tensor &input, const SignedVec &sizes);
   Tensor reshape(const SignedVec &sizes);
   Tensor reshape_as(const Tensor &input);

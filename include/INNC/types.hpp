@@ -40,8 +40,7 @@ concept is_innc_type = std::is_same_v<std::remove_cvref_t<T>, std::int8_t> ||
                        std::is_same_v<std::remove_cvref_t<T>, double>;
 
 template <typename L, typename R>
-  requires is_innc_type<L> && is_innc_type<R>
-struct innc_common_type {
+requires is_innc_type<L> &&is_innc_type<R> struct innc_common_type {
   using type =
       std::conditional_t<std::is_integral_v<L> && std::is_integral_v<R>,
                          std::conditional_t<sizeof(L) >= sizeof(R), L, R>,
