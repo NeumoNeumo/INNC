@@ -233,6 +233,7 @@ TEST(index, cat) {
   input[0] = a;
   input[1] = a;
   input[2] = a;
+  ASSERT_THROW(INNC::Tensor::cat(input, 2), std::runtime_error);
   auto b = INNC::Tensor::cat(input);
   ASSERT_EQ(
       b.to_string(),
