@@ -77,6 +77,10 @@ Tensor operator-(const Tensor &lhs, const Tensor &rhs) {
   return Tensor(*lhs.fptr - *rhs.fptr);
 }
 
+Tensor Tensor::operator+() { return Tensor(+*fptr); }
+
+Tensor Tensor::operator-() { return Tensor(-*fptr); }
+
 Tensor operator*(const Tensor &lhs, const Tensor &rhs) {
   return Tensor(*lhs.fptr * *rhs.fptr);
 }
@@ -103,10 +107,13 @@ Tensor Tensor::grad() const noexcept {
   return Tensor(fptr->grad);
 }
 
-Tensor Tensor::sum() const {
-  auto tf = fptr->sum();
-  return Tensor(tf);
-}
+Tensor Tensor::sum() const { return Tensor(fptr->sum()); }
+
+Tensor Tensor::abs() const { return Tensor(fptr->abs()); }
+
+Tensor Tensor::max() const { return Tensor(fptr->max()); }
+
+Tensor Tensor::min() const { return Tensor(fptr->min()); }
 
 void Tensor::zero_grad() const noexcept { fptr->zero_grad(); }
 
@@ -169,11 +176,11 @@ Tensor operator!=(const Tensor &lhs, const Tensor &rhs) {
   return Tensor(*lhs.fptr != *rhs.fptr);
 }
 
-Tensor Tensor::randn(const SizeVec &sizes, types dtype){
+Tensor Tensor::randn(const SizeVec &sizes, types dtype) {
   return Tensor(TensorImpl::randn(sizes, dtype));
 }
 
-Tensor Tensor::randn_like(const Tensor &t){
+Tensor Tensor::randn_like(const Tensor &t) {
   return Tensor(TensorImpl::randn_like(*t.fptr));
 }
 

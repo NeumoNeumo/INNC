@@ -88,12 +88,17 @@ public:
   size_t dim() const noexcept;
   Tensor grad() const noexcept;
   Tensor sum() const;
+  Tensor abs() const;
+  Tensor max() const;
+  Tensor min() const;
   void zero_grad() const noexcept;
   bool is_contiguous() const noexcept;
   Tensor contiguous() const;
   Tensor clone() const;
   Tensor detach() const;
   bool all() const;
+  Tensor operator-();
+  Tensor operator+();
   friend Tensor operator+(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator-(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator*(const Tensor &lhs, const Tensor &rhs);

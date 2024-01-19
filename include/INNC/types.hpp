@@ -29,7 +29,27 @@ std::string innc_type_to_string(NumericType auto num, types t);
 std::string innc_type_to_string(void *ptr, types t);
 
 template <typename T1, typename T2>
-using larger_t = std::conditional_t<sizeof(T1) >= sizeof(T2), T1, T2>;
+using size_larger_t = std::conditional_t<sizeof(T1) >= sizeof(T2), T1, T2>;
+
+template <typename T>
+concept is_innc_type = std::is_same_v<std::remove_cvref_t<T>, std::int8_t> ||
+                       std::is_same_v<std::remove_cvref_t<T>, std::int16_t> ||
+                       std::is_same_v<std::remove_cvref_t<T>, std::int32_t> ||
+                       std::is_same_v<std::remove_cvref_t<T>, std::int64_t> ||
+                       std::is_same_v<std::remove_cvref_t<T>, float> ||
+                       std::is_same_v<std::remove_cvref_t<T>, double>;
+
+template <typename L, typename R>
+  requires is_innc_type<L> && is_innc_type<R>
+struct innc_common_type {
+  using type =
+      std::conditional_t<std::is_integral_v<L> && std::is_integral_v<R>,
+                         std::conditional_t<sizeof(L) >= sizeof(R), L, R>,
+                         decltype(L{} + R{})>;
+};
+
+template <typename L, typename R>
+using innc_common_t = typename innc_common_type<L, R>::type;
 
 class SizeVec : public std::vector<size_t> {
 public:

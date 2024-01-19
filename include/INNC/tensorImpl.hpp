@@ -76,7 +76,12 @@ public:
   std::shared_ptr<TensorImpl> reshape(const SignedVec &sizes);
   std::shared_ptr<TensorImpl> reshape_as(const TensorImpl &sizes);
   std::shared_ptr<TensorImpl> sum();
+  std::shared_ptr<TensorImpl> abs();
+  std::shared_ptr<TensorImpl> max();
+  std::shared_ptr<TensorImpl> min();
   void zero_grad() const noexcept;
+  std::shared_ptr<TensorImpl> operator-();
+  std::shared_ptr<TensorImpl> operator+();
   friend std::shared_ptr<TensorImpl> operator+(TensorImpl &l, TensorImpl &r);
   friend std::shared_ptr<TensorImpl> operator-(TensorImpl &l, TensorImpl &r);
   friend std::shared_ptr<TensorImpl> operator*(TensorImpl &l, TensorImpl &r);
@@ -88,7 +93,6 @@ public:
   friend std::shared_ptr<TensorImpl> operator==(TensorImpl &l, TensorImpl &r);
   friend std::shared_ptr<TensorImpl> operator!=(TensorImpl &l, TensorImpl &r);
   TensorImpl &operator+=(const TensorImpl &rhs);
-  void try_accumulate_grad(TensorImpl *tf_w, TensorImpl *tf_o = nullptr);
   friend std::unique_ptr<TensorImpl> no_grad_add(const TensorImpl &lhs,
                                                  const TensorImpl &rhs);
   friend void check_same_size(const TensorImpl &lhs, const TensorImpl &rhs);
