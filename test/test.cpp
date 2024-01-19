@@ -227,10 +227,29 @@ TEST(index, reshape) {
 }
 
 TEST(index, cat){
-  auto a = INNC::from_blob(data_i16_2, {3, 4}, INNC::i16);
-  auto b = INNC::Tensor::cat({a,a,a});
+  auto a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
+  std::vector<INNC::Tensor> input;
+  input.resize(3);
+  input[0] = a;
+  input[1] = a;
+  input[2] = a;
+  auto b = INNC::Tensor::cat(input);
   ASSERT_EQ(b.to_string(), "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]");
 
+  a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
+  b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::types::i8);
+  input.resize(2);
+  input[0] = a;
+  input[1] = b;
+  auto c = INNC::Tensor::cat(input);
+  ASSERT_EQ(c.to_string(), "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, -2, 4], [6, 8, -10]]");
+
+  a = INNC::from_blob(data_i16_2, {3, 4}, INNC::i16);
+  b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16);
+  input.resize(2);
+  input[0] = a;
+  input[1] = b;
+  ASSERT_THROW(c = INNC::Tensor::cat(input), std::runtime_error);
 }
 
 TEST(autograd, add) {

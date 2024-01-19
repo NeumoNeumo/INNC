@@ -11,6 +11,7 @@
 #include "INNC/utils/rand.hpp"
 #include <cstring>
 #include <queue>
+#include <iostream>
 
 namespace INNC {
 
@@ -353,7 +354,7 @@ void tensor_cat(TensorImpl *to, const TensorImpl *from, size_t offset) {
                 to_string(from->dlayout)));
   ToType *to_ptr = reinterpret_cast<ToType *>(to->data_->get_blob());
   FromType *from_ptr = reinterpret_cast<FromType *>(from->data_->get_blob());
-  for_each_sizevec(to->view->sizes, [=](const SizeVec &sv) {
+  for_each_sizevec(from->view->sizes, [=](const SizeVec &sv) {
     *(to_ptr + offset + to->cnt_from_index(sv)) =
         *(from_ptr + from->cnt_from_index(sv));
   });
@@ -990,7 +991,7 @@ TensorImpl::cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
   types dtype = input_tfs[0]->dtype;
   SizeVec sizes;
   sizes.resize(input_tfs[0]->view->sizes.size());
-  for (size_t i = 1; i < input_tfs[0]->view->sizes.size(); i++) {
+  for (size_t i = 0; i < input_tfs[0]->view->sizes.size(); i++) {
     if (i == dim) {
       size_t s = 0;
       for (size_t j = 0; j < input_tfs.size(); j++) {
@@ -1005,9 +1006,11 @@ TensorImpl::cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
 
   std::shared_ptr<TensorImpl> ret = create(dtype, StridedLayout{sizes});
 
+  size_t s_offset = 0;
   for (size_t i = 0; i < input_tfs.size(); i++) {
     tensor_cat_helper::dispatch(dtype, input_tfs[i]->dtype)(
-        ret.get(), input_tfs[i].get(), i * dynamic_cast<StridedLayout *>(ret->view.get())->strides[dim]);
+        ret.get(), input_tfs[i].get(), s_offset * dynamic_cast<StridedLayout *>(ret->view.get())->strides[dim]);
+    s_offset += input_tfs[i]->view->sizes[dim];
   }
 
   // autograd
