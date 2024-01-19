@@ -80,4 +80,33 @@ namespace INNC {
     }                                                                          \
   };
 
+  // cat
+#define generate_unary_offset_op_helper(op)                                    \
+  class op##_helper {                                                          \
+    constexpr static void (*spec_list[types::Count][types::Count])(            \
+        TensorImpl * to, const TensorImpl *from, const size_t offset) = {      \
+        {op<std::int8_t, std::int8_t>, op<std::int8_t, std::int16_t>,          \
+         op<std::int8_t, std::int32_t>, op<std::int8_t, std::int64_t>,         \
+         op<std::int8_t, float>, op<std::int8_t, double>},                     \
+        {op<std::int16_t, std::int8_t>, op<std::int16_t, std::int16_t>,        \
+         op<std::int16_t, std::int32_t>, op<std::int16_t, std::int64_t>,       \
+         op<std::int16_t, float>, op<std::int16_t, double>},                   \
+        {op<std::int32_t, std::int8_t>, op<std::int32_t, std::int16_t>,        \
+         op<std::int32_t, std::int32_t>, op<std::int32_t, std::int64_t>,       \
+         op<std::int32_t, float>, op<std::int32_t, double>},                   \
+        {op<std::int64_t, std::int8_t>, op<std::int64_t, std::int16_t>,        \
+         op<std::int64_t, std::int32_t>, op<std::int64_t, std::int64_t>,       \
+         op<std::int64_t, float>, op<std::int64_t, double>},                   \
+        {op<float, std::int8_t>, op<float, std::int16_t>,                      \
+         op<float, std::int32_t>, op<float, std::int64_t>, op<float, float>,   \
+         op<float, double>},                                                   \
+        {op<double, std::int8_t>, op<double, std::int16_t>,                    \
+         op<double, std::int32_t>, op<double, std::int64_t>,                   \
+         op<double, float>, op<double, double>}};                              \
+                                                                               \
+  public:                                                                      \
+    static auto dispatch(types l_t, types r_t) { return spec_list[l_t][r_t]; } \
+  }
+
+
 } // namespace INNC

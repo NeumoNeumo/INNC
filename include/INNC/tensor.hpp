@@ -80,6 +80,8 @@ public:
   static Tensor reshape(const Tensor &input, const SignedVec &sizes);
   Tensor reshape(const SignedVec &sizes);
   Tensor reshape_as(const Tensor &input);
+  static Tensor
+  cat(const std::vector<Tensor> &input_tfs, const size_t dim);
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;
   void requires_grad(bool b);

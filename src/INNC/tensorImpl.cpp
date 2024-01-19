@@ -340,6 +340,25 @@ void tensor_ne(TensorImpl *dst, const TensorImpl *l, const TensorImpl *r) {
   });
 }
 
+// copy the data from onr tensor
+template <typename ToType, typename FromType>
+void tensor_cat(TensorImpl *to, const TensorImpl *from, size_t offset) {
+  if (to->dlayout != layouts::strided)
+    throw std::logic_error(
+        sformat("The layout %s of output has not been implemented",
+                to_string(to->dlayout)));
+  if (from->dlayout != layouts::strided)
+    throw std::logic_error(
+        sformat("The layout %s of input has not been implemented",
+                to_string(from->dlayout)));
+  ToType *to_ptr = reinterpret_cast<ToType *>(to->data_->get_blob());
+  FromType *from_ptr = reinterpret_cast<FromType *>(from->data_->get_blob());
+  for_each_sizevec(to->view->sizes, [=](const SizeVec &sv) {
+    *(to_ptr + offset + to->cnt_from_index(sv)) =
+        *(from_ptr + from->cnt_from_index(sv));
+  });
+}
+
 generate_binary_op_helper(tensor_add);
 generate_binary_op_helper(tensor_sub);
 generate_binary_op_helper(tensor_mul);
@@ -354,6 +373,7 @@ generate_unary_op_helper(tensor_fill);
 generate_unary_op_helper(tensor_to_type);
 generate_unary_op_helper(tensor_sum);
 generate_unary_op_helper(tensor_clone);
+generate_unary_offset_op_helper(tensor_cat);
 generate_ffi_op_helper(tensor_mul_acc_f);
 
 std::shared_ptr<TensorImpl> operator+(TensorImpl &l, TensorImpl &r) {
@@ -949,4 +969,50 @@ std::shared_ptr<TensorImpl> TensorImpl::randn(const SizeVec &sizes, types dtype)
 std::shared_ptr<TensorImpl> TensorImpl::randn_like(const TensorImpl &t){
   return randn(t.size(), t.dtype);
 }
+
+std::shared_ptr<TensorImpl>
+TensorImpl::cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
+    const size_t dim) {
+  run_expect(input_tfs.size() >= 2, "You cannot cat a tensor to nothing.");
+  for (size_t i = 1; i < input_tfs.size(); i++) {
+    run_expect(input_tfs[0]->view->sizes.size() ==
+                   input_tfs[i]->view->sizes.size(),
+               "You can't cat two vectors with different dimension.");
+    for (size_t j = 0; j < input_tfs[0]->view->sizes.size(); j++) {
+      if (j == dim)
+        continue;
+      run_expect(input_tfs[0]->view->sizes[j] == input_tfs[i]->view->sizes[j],
+                 "You can't cat two vectors with different size except for a "
+                 "given dimension.");
+    }
+  }
+
+  types dtype = input_tfs[0]->dtype;
+  SizeVec sizes;
+  sizes.resize(input_tfs[0]->view->sizes.size());
+  for (size_t i = 1; i < input_tfs[0]->view->sizes.size(); i++) {
+    if (i == dim) {
+      size_t s = 0;
+      for (size_t j = 0; j < input_tfs.size(); j++) {
+        s += input_tfs[j]->view->sizes[i];
+      }
+      sizes[i] = s;
+    } else {
+      sizes[i] = input_tfs[0]->view->sizes[i];
+    }
+    dtype = larger_type(dtype, input_tfs[i]->dtype);
+  }
+
+  std::shared_ptr<TensorImpl> ret = create(dtype, StridedLayout{sizes});
+
+  for (size_t i = 0; i < input_tfs.size(); i++) {
+    tensor_cat_helper::dispatch(dtype, input_tfs[i]->dtype)(
+        ret.get(), input_tfs[i].get(), i * dynamic_cast<StridedLayout *>(ret->view.get())->strides[dim]);
+  }
+
+  // autograd
+
+  return ret;
+}
+
 } // namespace INNC

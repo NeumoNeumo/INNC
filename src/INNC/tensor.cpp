@@ -177,4 +177,13 @@ Tensor Tensor::randn_like(const Tensor &t){
   return Tensor(TensorImpl::randn_like(*t.fptr));
 }
 
+Tensor
+  Tensor::cat(const std::vector<Tensor> &input_tfs, const size_t dim){
+    std::vector<std::shared_ptr<INNC::TensorImpl>> input_tfs_;
+    for (size_t i = 0; i < input_tfs.size(); i++){
+      input_tfs_.push_back(input_tfs[i].fptr);
+    }
+    return Tensor(TensorImpl::cat(input_tfs_, dim));
+  }
+
 } // namespace INNC
