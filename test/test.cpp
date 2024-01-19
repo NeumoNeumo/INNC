@@ -281,7 +281,7 @@ TEST(index, transpose) {
   b = INNC::from_blob(f64_arr, {2, 3}, INNC::f64);
   ASSERT_EQ(a.to_string(), b.to_string());
   ASSERT_EQ(a.transpose(0, 1).transpose(0, 1).to_string(), a.to_string());
-  
+
   a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
   b = INNC::transpose(a, 0, 1);
   ASSERT_EQ(b.to_string(), "[[0, 3, 6, 9], [1, 4, 7, 10], [2, 5, 8, 11]]");
@@ -297,6 +297,10 @@ TEST(index, transpose) {
   b = INNC::from_blob(f64_arr, {2, 3}, INNC::f64);
   ASSERT_EQ(a.to_string(), b.to_string());
   ASSERT_EQ(a.permute({0, 1}).permute({0, 1}).to_string(), a.to_string());
+  a = INNC::from_blob(data_i16_2, {1, 3, 4}, INNC::i16);
+  b = INNC::Tensor::permute(a, {2, 0, 1});
+  std::int16_t rst1[12] = {0, 4, 8, 1, 5, 9, 2, 6, 10, 3, 7, 11};
+  ASSERT_STRICT_APPROX(b, INNC::from_blob(rst1, {4,1,3}, INNC::i16));
 }
 
 TEST(index, reshape) {
