@@ -300,7 +300,7 @@ TEST(index, transpose) {
   a = INNC::from_blob(data_i16_2, {1, 3, 4}, INNC::i16);
   b = INNC::Tensor::permute(a, {2, 0, 1});
   std::int16_t rst1[12] = {0, 4, 8, 1, 5, 9, 2, 6, 10, 3, 7, 11};
-  ASSERT_STRICT_APPROX(b, INNC::from_blob(rst1, {4,1,3}, INNC::i16));
+  ASSERT_STRICT_APPROX(b, INNC::from_blob(rst1, {4, 1, 3}, INNC::i16));
 }
 
 TEST(index, reshape) {

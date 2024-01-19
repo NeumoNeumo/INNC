@@ -548,23 +548,24 @@ std::shared_ptr<TensorImpl> TensorImpl::transpose(size_t dim0, size_t dim1) {
 std::shared_ptr<TensorImpl>
 TensorImpl::permute(const std::shared_ptr<TensorImpl> &input,
                     const SizeVec dims) {
-  run_expect(dims.size() >= 2, "the size of dims for permute must be greater dim 2.");
+  run_expect(dims.size() >= 2,
+             "the size of dims for permute must be greater dim 2.");
   auto dim = input->dim();
   std::unordered_set<int> unique_nums;
-    for (int num : dims) {
-      run_expect(num >= 0 && num < dim,
-             "Index out of range dimension ", dim,
-             ". Actual input of "
-             "permute: (",
-             dims.to_string(), ")");
-        auto result = unique_nums.insert(num);
-        run_expect(result.second, "dims must be distinguished. But they are ", dims.to_string());
+  for (int num : dims) {
+    run_expect(num >= 0 && num < dim, "Index out of range dimension ", dim,
+               ". Actual input of "
+               "permute: (",
+               dims.to_string(), ")");
+    auto result = unique_nums.insert(num);
+    run_expect(result.second, "dims must be distinguished. But they are ",
+               dims.to_string());
   }
 
   auto view_s = dynamic_cast<StridedLayout *>(input->view.get());
   SizeVec _sizes = view_s->sizes;
   SignedVec _strides = view_s->strides;
-  for (size_t i = 1; i < dims.size(); i++){
+  for (size_t i = 1; i < dims.size(); i++) {
     std::swap(_sizes[dims[0]], _sizes[dims[i]]);
     std::swap(_strides[dims[0]], _strides[dims[i]]);
   }
