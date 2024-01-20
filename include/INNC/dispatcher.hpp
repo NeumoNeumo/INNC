@@ -1,4 +1,31 @@
 namespace INNC {
+#define generate_unary_grad_op_helper(op)                                      \
+  class op##_helper {                                                          \
+    constexpr static void (*spec_list[types::Count][types::Count])(            \
+        TensorImpl * to, const TensorImpl *from, const TensorImpl *grad) = {   \
+        {op<std::int8_t, std::int8_t>, op<std::int8_t, std::int16_t>,          \
+         op<std::int8_t, std::int32_t>, op<std::int8_t, std::int64_t>,         \
+         op<std::int8_t, float>, op<std::int8_t, double>},                     \
+        {op<std::int16_t, std::int8_t>, op<std::int16_t, std::int16_t>,        \
+         op<std::int16_t, std::int32_t>, op<std::int16_t, std::int64_t>,       \
+         op<std::int16_t, float>, op<std::int16_t, double>},                   \
+        {op<std::int32_t, std::int8_t>, op<std::int32_t, std::int16_t>,        \
+         op<std::int32_t, std::int32_t>, op<std::int32_t, std::int64_t>,       \
+         op<std::int32_t, float>, op<std::int32_t, double>},                   \
+        {op<std::int64_t, std::int8_t>, op<std::int64_t, std::int16_t>,        \
+         op<std::int64_t, std::int32_t>, op<std::int64_t, std::int64_t>,       \
+         op<std::int64_t, float>, op<std::int64_t, double>},                   \
+        {op<float, std::int8_t>, op<float, std::int16_t>,                      \
+         op<float, std::int32_t>, op<float, std::int64_t>, op<float, float>,   \
+         op<float, double>},                                                   \
+        {op<double, std::int8_t>, op<double, std::int16_t>,                    \
+         op<double, std::int32_t>, op<double, std::int64_t>,                   \
+         op<double, float>, op<double, double>}};                              \
+                                                                               \
+  public:                                                                      \
+    static auto dispatch(types l_t, types r_t) { return spec_list[l_t][r_t]; } \
+  }
+
 #define generate_unary_op_helper(op)                                           \
   class op##_helper {                                                          \
     constexpr static void (*spec_list[types::Count][types::Count])(            \
@@ -54,7 +81,7 @@ namespace INNC {
     static auto dispatch(types l_t, types r_t) { return spec_list[l_t][r_t]; } \
   }
 
-// float, float, int
+// float, float, int/float
 #define generate_ffi_op_helper(op)                                             \
   class op##_helper {                                                          \
     constexpr static void (                                                    \
@@ -106,6 +133,33 @@ namespace INNC {
                                                                                \
   public:                                                                      \
     static auto dispatch(types l_t, types r_t) { return spec_list[l_t][r_t]; } \
+  }
+
+// float, float
+#define generate_ff_op4_helper(op)                                             \
+  class op##_helper {                                                          \
+    constexpr static void (*spec_list[float_type_n_][float_type_n_])(          \
+        TensorImpl * dst, const TensorImpl *i1, const TensorImpl *i2,          \
+        const TensorImpl *i3) = {{op<float, float>, op<float, double>},        \
+                                 {op<double, float>, op<double, double>}};     \
+                                                                               \
+  public:                                                                      \
+    static auto dispatch(types l_t, types r_t) {                               \
+      return spec_list[l_t - float_type_idx_start_]                            \
+                      [r_t - float_type_idx_start_];                           \
+    }                                                                          \
+  }
+
+#define generate_i_op2_helper(op)                                              \
+  class op##_helper {                                                          \
+    constexpr static void (*spec_list[types::Count])(TensorImpl * dst,         \
+                                                     const TensorImpl *i1,     \
+                                                     const TensorImpl *i2) = { \
+        op<std::int8_t>,  op<std::int16_t>, op<std::int32_t>,                  \
+        op<std::int64_t>, op<float>,        op<double>};                       \
+                                                                               \
+  public:                                                                      \
+    static auto dispatch(types t) { return spec_list[t]; }                     \
   }
 
 } // namespace INNC

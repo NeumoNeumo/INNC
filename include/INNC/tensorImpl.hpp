@@ -55,6 +55,10 @@ public:
   static std::shared_ptr<TensorImpl> ones(const SizeVec &sizes, types dtype);
   static std::shared_ptr<TensorImpl> zeros_like(const TensorImpl &t);
   static std::shared_ptr<TensorImpl> ones_like(const TensorImpl &t);
+  static std::shared_ptr<TensorImpl> full(const SizeVec &sv, std::int64_t num,
+                                          types dtype);
+  static std::shared_ptr<TensorImpl> full(const SizeVec &sv, double num,
+                                          types dtype);
   static std::shared_ptr<TensorImpl> from_blob(void *data, const SizeVec &sizes,
                                                types dtype);
   static std::shared_ptr<TensorImpl> randn(const SizeVec &sizes, types dtype);
@@ -65,6 +69,7 @@ public:
   std::shared_ptr<TensorImpl> type(types t);
   SignedVec stride() const;
   SizeVec size() const;
+  size_t size(int d) const;
   std::shared_ptr<TensorImpl> operator[](const std::string &slice);
   static std::shared_ptr<TensorImpl>
   transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0, size_t dim1);
@@ -76,10 +81,15 @@ public:
   std::shared_ptr<TensorImpl> reshape(const SignedVec &sizes);
   std::shared_ptr<TensorImpl> reshape_as(const TensorImpl &sizes);
   static std::shared_ptr<TensorImpl>
-  cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
+  cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_ts,
       const size_t dim);
   std::shared_ptr<TensorImpl> sum();
+  std::shared_ptr<TensorImpl> abs();
+  std::shared_ptr<TensorImpl> max();
+  std::shared_ptr<TensorImpl> min();
   void zero_grad() const noexcept;
+  std::shared_ptr<TensorImpl> operator-();
+  std::shared_ptr<TensorImpl> operator+();
   friend std::shared_ptr<TensorImpl> operator+(TensorImpl &l, TensorImpl &r);
   friend std::shared_ptr<TensorImpl> operator-(TensorImpl &l, TensorImpl &r);
   friend std::shared_ptr<TensorImpl> operator*(TensorImpl &l, TensorImpl &r);
@@ -91,7 +101,6 @@ public:
   friend std::shared_ptr<TensorImpl> operator==(TensorImpl &l, TensorImpl &r);
   friend std::shared_ptr<TensorImpl> operator!=(TensorImpl &l, TensorImpl &r);
   TensorImpl &operator+=(const TensorImpl &rhs);
-  void try_accumulate_grad(TensorImpl *tf_w, TensorImpl *tf_o = nullptr);
   friend std::unique_ptr<TensorImpl> no_grad_add(const TensorImpl &lhs,
                                                  const TensorImpl &rhs);
   friend void check_same_size(const TensorImpl &lhs, const TensorImpl &rhs);

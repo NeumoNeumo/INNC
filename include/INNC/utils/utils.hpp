@@ -58,15 +58,19 @@ SizeVec broadcast_range(const SizeVec &u, const SizeVec &v);
 template <typename ForwardType>
   requires is_valid_forward<ForwardType>
 std::shared_ptr<TensorImpl> apply_no_grad_binary_op(const TensorImpl &lhs,
-                                                    const TensorImpl &rhs) {
+                                                    const TensorImpl &rhs,
+                                                    bool order = false) {
   types lt = INNC::larger_type(lhs.dtype, rhs.dtype);
   auto ret = INNC::TensorImpl::create(
       lt, StridedLayout{broadcast_range(lhs.size(), rhs.size())});
-  if (lhs.dtype == lt) {
+  if (!order)
+    if (lhs.dtype == lt) {
+      ForwardType::dispatch(lhs.dtype, rhs.dtype)(ret.get(), &lhs, &rhs);
+    } else {
+      ForwardType::dispatch(rhs.dtype, lhs.dtype)(ret.get(), &rhs, &lhs);
+    }
+  else
     ForwardType::dispatch(lhs.dtype, rhs.dtype)(ret.get(), &lhs, &rhs);
-  } else {
-    ForwardType::dispatch(rhs.dtype, lhs.dtype)(ret.get(), &rhs, &lhs);
-  }
   return ret;
 }
 
@@ -74,14 +78,9 @@ template <typename ForwardType>
   requires is_valid_forward<ForwardType>
 std::shared_ptr<TensorImpl> apply_cmp_op(const TensorImpl &lhs,
                                          const TensorImpl &rhs) {
-  types lt = INNC::larger_type(lhs.dtype, rhs.dtype);
   auto ret = INNC::TensorImpl::create(
       INNC::i8, StridedLayout{broadcast_range(lhs.size(), rhs.size())});
-  if (lhs.dtype == lt) {
-    ForwardType::dispatch(lhs.dtype, rhs.dtype)(ret.get(), &lhs, &rhs);
-  } else {
-    ForwardType::dispatch(rhs.dtype, lhs.dtype)(ret.get(), &rhs, &lhs);
-  }
+  ForwardType::dispatch(lhs.dtype, rhs.dtype)(ret.get(), &lhs, &rhs);
   return ret;
 }
 
@@ -97,8 +96,8 @@ template <typename ForwardType, typename BackwardType>
            std::derived_from<BackwardType, Backward>
 std::shared_ptr<TensorImpl>
 apply_binary_operator(std::shared_ptr<TensorImpl> lhs,
-                      std::shared_ptr<TensorImpl> rhs) {
-  auto ret = apply_no_grad_binary_op<ForwardType>(*lhs, *rhs);
+                      std::shared_ptr<TensorImpl> rhs, bool order = false) {
+  auto ret = apply_no_grad_binary_op<ForwardType>(*lhs, *rhs, order);
   if (!lhs->requires_grad && !rhs->requires_grad)
     return ret;
   ret->requires_grad = true;

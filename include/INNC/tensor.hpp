@@ -67,6 +67,8 @@ public:
   static Tensor ones(const SizeVec &size, types t);
   static Tensor zeros_like(const Tensor &t);
   static Tensor ones_like(const Tensor &t);
+  static Tensor full(const SizeVec &size, std::int64_t num, types dtype);
+  static Tensor full(const SizeVec &size, double num, types dtype);
   static Tensor from_blob(void *data, const SizeVec &sizes, types dtype);
   static Tensor randn(const SizeVec &sizes, types dtype);
   static Tensor randn_like(const Tensor &t);
@@ -80,7 +82,8 @@ public:
   static Tensor reshape(const Tensor &input, const SignedVec &sizes);
   Tensor reshape(const SignedVec &sizes);
   Tensor reshape_as(const Tensor &input);
-  static Tensor cat(const std::vector<Tensor> &input_tfs, const size_t dim = 0);
+  static Tensor cat(const std::vector<Tensor> &input_tensors,
+                    const size_t dim = 0);
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;
   void requires_grad(bool b);
@@ -89,12 +92,17 @@ public:
   size_t dim() const noexcept;
   Tensor grad() const noexcept;
   Tensor sum() const;
+  Tensor abs() const;
+  Tensor max() const;
+  Tensor min() const;
   void zero_grad() const noexcept;
   bool is_contiguous() const noexcept;
   Tensor contiguous() const;
   Tensor clone() const;
   Tensor detach() const;
   bool all() const;
+  Tensor operator-();
+  Tensor operator+();
   friend Tensor operator+(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator-(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator*(const Tensor &lhs, const Tensor &rhs);

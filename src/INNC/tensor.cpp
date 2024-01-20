@@ -77,6 +77,10 @@ Tensor operator-(const Tensor &lhs, const Tensor &rhs) {
   return Tensor(*lhs.fptr - *rhs.fptr);
 }
 
+Tensor Tensor::operator+() { return Tensor(+*fptr); }
+
+Tensor Tensor::operator-() { return Tensor(-*fptr); }
+
 Tensor operator*(const Tensor &lhs, const Tensor &rhs) {
   return Tensor(*lhs.fptr * *rhs.fptr);
 }
@@ -103,10 +107,13 @@ Tensor Tensor::grad() const noexcept {
   return Tensor(fptr->grad);
 }
 
-Tensor Tensor::sum() const {
-  auto tf = fptr->sum();
-  return Tensor(tf);
-}
+Tensor Tensor::sum() const { return Tensor(fptr->sum()); }
+
+Tensor Tensor::abs() const { return Tensor(fptr->abs()); }
+
+Tensor Tensor::max() const { return Tensor(fptr->max()); }
+
+Tensor Tensor::min() const { return Tensor(fptr->min()); }
 
 void Tensor::zero_grad() const noexcept { fptr->zero_grad(); }
 
@@ -177,12 +184,19 @@ Tensor Tensor::randn_like(const Tensor &t) {
   return Tensor(TensorImpl::randn_like(*t.fptr));
 }
 
-Tensor Tensor::cat(const std::vector<Tensor> &input_tfs, const size_t dim) {
+Tensor Tensor::cat(const std::vector<Tensor> &input_tensors, const size_t dim) {
   std::vector<std::shared_ptr<INNC::TensorImpl>> input_tfs_;
-  for (size_t i = 0; i < input_tfs.size(); i++) {
-    input_tfs_.push_back(input_tfs[i].fptr);
-  }
+  for (const auto &t : input_tensors)
+    input_tfs_.emplace_back(t.fptr);
   return Tensor(TensorImpl::cat(input_tfs_, dim));
+}
+
+Tensor Tensor::full(const SizeVec &sv, std::int64_t num, types dtype) {
+  return Tensor(TensorImpl::full(sv, num, dtype));
+}
+
+Tensor Tensor::full(const SizeVec &sv, double num, types dtype) {
+  return Tensor(TensorImpl::full(sv, num, dtype));
 }
 
 } // namespace INNC

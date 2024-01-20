@@ -62,7 +62,7 @@ Build From Source
 
    git clone --depth 1 --recurse-submodules https://github.com/NeumoNeumo/INNC.git
    cd INNC
-   meson setup -Db_sanitize=address -Db_coverage build/ && cd build
+   meson setup -Db_sanitize=address -Db_coverage=true build/ && cd build
    meson compile -j $(nproc)
    meson test
 

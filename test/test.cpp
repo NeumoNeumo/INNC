@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <string>
+#include <type_traits>
 
 std::int8_t data_i8_1[6] = {1, -3, -5, 7, -9, 11};
 std::int16_t data_i16_1[6] = {0, -2, 4, 6, 8, -10};
@@ -11,6 +12,17 @@ std::int16_t data_i16_2[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 
 INNC::types all_type[6] = {INNC::i8,  INNC::i16, INNC::i32,
                            INNC::i64, INNC::f32, INNC::f64};
+
+constexpr double epsilon = 1e-6;
+
+#define ASSERT_STRICT_APPROX(lhs, rhs)                                         \
+  static_assert(                                                               \
+      std::is_same_v<std::remove_cvref_t<decltype(lhs)>, INNC::Tensor> &&      \
+          std::is_same_v<std::remove_cvref_t<decltype(rhs)>, INNC::Tensor>,    \
+      "This macro only compares between `Tensor`s");                           \
+  ASSERT_EQ((lhs).size(), (rhs).size());                                       \
+  ASSERT_EQ((lhs).type(), (rhs).type());                                       \
+  ASSERT_TRUE((((lhs) - (rhs)).abs() < epsilon).all());
 
 TEST(basic, initialization) {
   auto a = INNC::zeros({1}, INNC::i16);
@@ -50,6 +62,13 @@ TEST(basic, initialization) {
   ASSERT_EQ(b.to_string(), std::to_string(double(1)));
   a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
   ASSERT_EQ(a.to_string(), output_i8_1);
+  a = INNC::full({2, 3, 3}, -1l, INNC::i32);
+  ASSERT_STRICT_APPROX(a.sum(), INNC::Tensor(-18l));
+  a = INNC::full({1}, -2.0, INNC::f64);
+  ASSERT_STRICT_APPROX(a.sum(), INNC::Tensor(-2.0));
+  a = INNC::full({0}, -2.0, INNC::f64);
+  ASSERT_EQ(a.size().to_string(), "[0]");
+  ASSERT_EQ(a.to_string(), "[]");
 }
 
 TEST(basic, type) {
@@ -103,9 +122,42 @@ TEST(arithmetic, add) {
   a = INNC::ones({1}, INNC::i64);
   b = INNC::ones({1}, INNC::i32);
   ASSERT_EQ((a + b).to_string(), "[2]");
+  a = a["4:5"];
+  ASSERT_THROW(a + b, std::runtime_error);
+  a = INNC::from_blob(data_i8_1, {3, 1, 2, 1}, INNC::i8);
+  b = INNC::from_blob(data_i16_1, {3, 1, 2}, INNC::i16);
+  char rst_d[3][3][2][2] = {
+      {{{1, -1}, {-3, -5}}, {{5, 7}, {1, 3}}, {{9, -9}, {5, -13}}},
+      {{{-5, -7}, {7, 5}}, {{-1, 1}, {11, 13}}, {{3, -15}, {15, -3}}},
+      {{{-9, -11}, {11, 9}}, {{-5, -3}, {15, 17}}, {{-1, -19}, {19, 1}}}};
+  auto c = a + b;
+  auto rst = INNC::from_blob(rst_d, {3, 3, 2, 2}, INNC::i8).type(c.type());
+  ASSERT_EQ(c.to_string(), rst.to_string());
 }
 
-TEST(arithmetic, mul) {
+TEST(arithmetic, substract) {
+  auto a = INNC::ones({2, 3}, INNC::i16);
+  auto b = INNC::ones({2, 3}, INNC::i32);
+  ASSERT_EQ((a - b).to_string(), INNC::zeros_like(b).to_string());
+  b = a - 1;
+  ASSERT_EQ(b.to_string(), INNC::zeros_like(b).to_string());
+  a = INNC::from_blob(data_i8_1, {3, 1, 2, 1}, INNC::i8);
+  b = INNC::from_blob(data_i16_1, {3, 1, 2}, INNC::i16);
+  char rst_d[3][3][2][2] = {
+      {{{1, 3}, {-3, -1}}, {{-3, -5}, {-7, -9}}, {{-7, 11}, {-11, 7}}},
+      {{{-5, -3}, {7, 9}}, {{-9, -11}, {3, 1}}, {{-13, 5}, {-1, 17}}},
+      {{{-9, -7}, {11, 13}}, {{-13, -15}, {7, 5}}, {{-17, 1}, {3, 21}}}};
+  auto c = a - b;
+  auto rst = INNC::from_blob(rst_d, {3, 3, 2, 2}, INNC::i8).type(c.type());
+  ASSERT_EQ(c.to_string(), rst.to_string());
+  a = INNC::from_blob(data_i8_1, {3, 2}, INNC::i8);
+  // std::int8_t data_i8_1[6] = {1, -3, -5, 7, -9, 11};
+  char rst_d1[3][2] = {{-1, 3}, {5, -7}, {9, -11}};
+  rst = INNC::from_blob(rst_d1, {3, 2}, INNC::i8);
+  ASSERT_EQ((-a).to_string(), rst.type(a.type()).to_string());
+}
+
+TEST(arithmetic, multiplication) {
   auto a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
   auto b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16);
   ASSERT_EQ((a * b).to_string(), "[[0, 6, -20], [42, -72, -110]]");
@@ -116,17 +168,60 @@ TEST(arithmetic, mul) {
   a = INNC::ones({1}, INNC::i64);
   b = INNC::ones({1}, INNC::i32);
   ASSERT_EQ((a + b).to_string(), "[2]");
+  a = INNC::from_blob(data_i8_1, {3, 1, 2, 1}, INNC::i8);
+  b = INNC::from_blob(data_i16_1, {3, 1, 2}, INNC::i16);
+  char rst_d[3][3][2][2] = {
+      {{{0, -2}, {0, 6}}, {{4, 6}, {-12, -18}}, {{8, -10}, {-24, 30}}},
+      {{{0, 10}, {0, -14}}, {{-20, -30}, {28, 42}}, {{-40, 50}, {56, -70}}},
+      {{{0, 18}, {0, -22}}, {{-36, -54}, {44, 66}}, {{-72, 90}, {88, -110}}}};
+  auto c = a * b;
+  auto rst = INNC::from_blob(rst_d, {3, 3, 2, 2}, INNC::i8).type(c.type());
+  ASSERT_EQ(c.to_string(), rst.to_string());
+}
+
+TEST(arithmetic, divide) {
+  auto a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
+  auto b = a / 3;
+  std::int8_t rst_d0[2][3] = {{0, -1, -1}, {2, -3, 3}};
+  auto rst = INNC::from_blob(rst_d0, {2, 3}, INNC::i8);
+  ASSERT_EQ(b.to_string(), rst.to_string());
+  a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8).type(INNC::f64);
+  b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16);
+  ASSERT_EQ((b / a * a).to_string(), b.type(INNC::f64).to_string());
+  a = INNC::from_blob(data_i8_1, {3, 1, 2, 1}, INNC::i8);
+  b = INNC::from_blob(data_i16_1, {3, 1, 2}, INNC::i16);
+  char rst_d1[3][3][2][2] = {
+      {{{0, -2}, {0, 0}}, {{4, 6}, {-1, -2}}, {{8, -10}, {-2, 3}}},
+      {{{0, 0}, {0, 0}}, {{0, -1}, {0, 0}}, {{-1, 2}, {1, -1}}},
+      {{{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 1}, {0, 0}}}};
+  auto c = b / a;
+  rst = INNC::from_blob(rst_d1, {3, 3, 2, 2}, INNC::i8).type(c.type());
+  ASSERT_EQ(c.to_string(), rst.to_string());
+  ASSERT_STRICT_APPROX(c, rst);
 }
 
 TEST(arithmetic, sum) {
   auto a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
-  ASSERT_EQ(a.sum().to_string(), "2");
+  ASSERT_EQ(a.sum().to_string(), std::to_string(std::int8_t(2)));
   a = INNC::from_blob(data_i16_1, {3, 2}, INNC::i16);
-  ASSERT_EQ(a.sum().to_string(), "6");
+  ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(6)));
   a = std::int16_t(3);
   ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(3)));
   a = INNC::ones({1}, INNC::i16);
   ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(1)));
+}
+
+TEST(arithmetic, max) {
+  auto a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
+  ASSERT_EQ(a.max().to_string(), std::to_string(std::int8_t(11)));
+  a = INNC::from_blob(data_i16_1, {3, 1, 2}, INNC::i16);
+  ASSERT_EQ(a.max().to_string(), std::to_string(std::int16_t(8)));
+  a = std::int16_t(3);
+  ASSERT_EQ(a.max().to_string(), std::to_string(std::int16_t(3)));
+  a = INNC::ones({1}, INNC::i16);
+  ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(1)));
+  a = a["3:4"];
+  a.max();
 }
 
 TEST(index, slice) {
@@ -233,32 +328,34 @@ TEST(index, cat) {
   input[0] = a;
   input[1] = a;
   input[2] = a;
-  ASSERT_THROW(INNC::Tensor::cat(input, 2), std::runtime_error);
-  auto b = INNC::Tensor::cat(input);
-  ASSERT_EQ(
-      b.to_string(),
-      "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], "
-      "[6, 7, 8], [9, 10, 11], [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]");
-  b = INNC::Tensor::cat(input, 1);
-  ASSERT_EQ(b.to_string(),
-            "[[0, 1, 2, 0, 1, 2, 0, 1, 2], [3, 4, 5, 3, 4, 5, 3, 4, 5], [6, 7, "
-            "8, 6, 7, 8, 6, 7, 8], [9, 10, 11, 9, 10, 11, 9, 10, 11]]");
-
-  a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
-  b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::types::i8);
+  ASSERT_THROW(INNC::cat(input, 2), std::runtime_error);
+  auto b = INNC::cat(input);
+  std::int8_t rst_d0[12][3] = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11},
+                               {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11},
+                               {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11}};
+  auto rst = INNC::from_blob(rst_d0, {12, 3}, INNC::i8).type(INNC::i16);
+  ASSERT_STRICT_APPROX(b, rst);
+  b = INNC::cat(input, 1);
+  std::int8_t rst_d1[4][9] = {{0, 1, 2, 0, 1, 2, 0, 1, 2},
+                              {3, 4, 5, 3, 4, 5, 3, 4, 5},
+                              {6, 7, 8, 6, 7, 8, 6, 7, 8},
+                              {9, 10, 11, 9, 10, 11, 9, 10, 11}};
+  rst = INNC::from_blob(rst_d1, {4, 9}, INNC::i8).type(INNC::i16);
+  ASSERT_STRICT_APPROX(b, rst);
   input.resize(2);
-  input[0] = a;
-  input[1] = b;
-  auto c = INNC::Tensor::cat(input);
-  ASSERT_EQ(c.to_string(), "[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [0, "
-                           "-2, 4], [6, 8, -10]]");
-
-  a = INNC::from_blob(data_i16_2, {3, 4}, INNC::i16);
-  b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16);
-  input.resize(2);
-  input[0] = a;
-  input[1] = b;
-  ASSERT_THROW(c = INNC::Tensor::cat(input), std::runtime_error);
+  input[0] = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
+  input[1] =
+      INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::types::f32);
+  auto c = INNC::cat(input);
+  std::int8_t rst_d2[6][3] = {{0, 1, 2},   {3, 4, 5},  {6, 7, 8},
+                              {9, 10, 11}, {0, -2, 4}, {6, 8, -10}};
+  rst = INNC::from_blob(rst_d2, {6, 3}, INNC::i8).type(INNC::f32);
+  ASSERT_STRICT_APPROX(c, rst);
+  input[0] = INNC::from_blob(data_i16_2, {3, 4}, INNC::i16);
+  input[1] = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16);
+  ASSERT_THROW(INNC::cat(input), std::runtime_error);
+  input.resize(1);
+  ASSERT_STRICT_APPROX(INNC::cat(input), input[0]);
 }
 
 TEST(autograd, add) {
@@ -287,41 +384,82 @@ TEST(autograd, add) {
   d.sum().backward();
   ASSERT_EQ(a.grad().to_string(), "[" + std::to_string(4.0) + "]");
 
-  a = INNC::ones({1}, INNC::f32);
-  b = INNC::ones({1}, INNC::f64);
+  a = float(1);
+  b = double(1);
   a.requires_grad(true);
   b.requires_grad(true);
   c = a + (b + a);
   c = c + b;
   d = c + c + a;
   d.sum().backward();
-  ASSERT_EQ(a.grad().to_string(), "[" + std::to_string(5.0) + "]");
-  ASSERT_EQ(b.grad().to_string(), "[" + std::to_string(4.0) + "]");
+  ASSERT_EQ(a.grad().to_string(), INNC::Tensor(float(5)).to_string());
+  ASSERT_EQ(b.grad().to_string(), INNC::Tensor(double(4)).to_string());
   a.zero_grad();
-  ASSERT_EQ(a.grad().to_string(), "[" + std::to_string(0.0) + "]");
+  ASSERT_EQ(a.grad().to_string(), INNC::Tensor(float(0)).to_string());
 }
 
-TEST(autograd, mul) {
+TEST(autograd, substract) {
+  auto a = INNC::ones({2, 3}, INNC::f64);
+  auto b = INNC::ones({2, 1}, INNC::f32);
+  a.requires_grad(true);
+  b.requires_grad(true);
+  (a - b).sum().backward();
+  ASSERT_STRICT_APPROX(a.grad(), a);
+  ASSERT_STRICT_APPROX(b.grad(), b * (-3));
+  b = double(1);
+  b.requires_grad(true);
+  (a - b).sum().backward();
+  ASSERT_STRICT_APPROX(b.grad(), b * (-6));
+  b = double(5);
+  b.requires_grad(true);
+  (a - b + b).sum().backward();
+  ASSERT_STRICT_APPROX(b.grad(), INNC::zeros_like(b));
+}
+
+TEST(autograd, multiplication) {
   auto a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8).type(INNC::f32);
   auto b = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8).type(INNC::f64);
   a.requires_grad(true);
   b.requires_grad(true);
   auto c = a * b;
   c.sum().backward();
-  ASSERT_EQ(a.grad().to_string(), b.to_string());
-  ASSERT_EQ(b.grad().to_string(), a.to_string());
+  ASSERT_STRICT_APPROX(a.grad(), b.type(a.type()));
+  ASSERT_STRICT_APPROX(b.grad(), a.type(b.type()));
   a.zero_grad();
   c = a * a;
   c.sum().backward();
-  ASSERT_EQ(a.grad().to_string(), (a + a).to_string());
+  ASSERT_STRICT_APPROX(a.grad(), a + a);
   a.zero_grad();
   b.requires_grad(false);
   (a * (a * b) * b).sum().backward();
-  ASSERT_EQ(a.grad().to_string(), ((a + a) * b * b).to_string());
+  ASSERT_STRICT_APPROX(a.grad(), ((a + a) * b * b).type(a.type()));
   a.zero_grad();
   b = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
   (a * b).sum().backward();
-  ASSERT_EQ(a.grad().to_string(), b.type(a.type()).to_string());
+  ASSERT_STRICT_APPROX(a.grad(), b.type(a.type()));
+  a.zero_grad();
+  b = double(2);
+  b.requires_grad(true);
+  (a * b).sum().backward();
+  ASSERT_STRICT_APPROX(a.grad(), INNC::zeros_like(a) + 2);
+  ASSERT_STRICT_APPROX(b.grad(), INNC::zeros_like(b) + 2);
+}
+
+TEST(autograd, divide) {
+  auto a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8).type(INNC::f32);
+  auto b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f64);
+  a.requires_grad(true);
+  b.requires_grad(true);
+  (b / a).sum().backward();
+  ASSERT_STRICT_APPROX(b.grad(), (1 / a).type(b.type()));
+  auto c = -b;
+  ASSERT_STRICT_APPROX(a.grad(), (-b / a / a).type(a.type()));
+  b = double(5);
+  b.requires_grad(true);
+  a.zero_grad();
+  (b / a * a).sum().backward();
+  ASSERT_STRICT_APPROX(b.grad(), INNC::Tensor(6).type(b.type()));
+  ASSERT_STRICT_APPROX(a.grad(), INNC::zeros_like(a));
 }
 
 TEST(autograd, slice) {
@@ -487,21 +625,40 @@ TEST(autograd, type) {
 
 TEST(autograd, cat) {
   auto a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16).type(INNC::f32);
-  auto c = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f32);
+  auto b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f64);
   std::vector<INNC::Tensor> input;
   a.requires_grad(true);
-  c.requires_grad(true);
+  b.requires_grad(true);
   input.resize(3);
   input[0] = a;
-  input[1] = c;
+  input[1] = b;
   input[2] = a;
-  auto b = INNC::Tensor::cat(input);
-  b.retain_grad(true);
-  b.sum().backward();
-  auto d = INNC::ones({10, 3}, INNC::f32);
-  ASSERT_EQ(b.grad().to_string(), d.to_string());
-  d = INNC::ones({4, 3}, INNC::f32) * 2;
-  ASSERT_EQ(a.grad().to_string(), d.to_string());
+  auto c = INNC::Tensor::cat(input);
+  c.retain_grad(true);
+  c.sum().backward();
+  auto rst = INNC::ones({10, 3}, INNC::f64);
+  ASSERT_EQ(c.grad().to_string(), rst.to_string());
+  rst = INNC::ones({4, 3}, INNC::f32) * 2;
+  ASSERT_STRICT_APPROX(a.grad(), rst);
+  ASSERT_STRICT_APPROX(b.grad(), INNC::ones({2, 3}, INNC::f64));
+}
+
+TEST(autograd, max) {
+  auto a = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f32);
+  a.requires_grad(true);
+  a.max().backward();
+  std::int8_t rst_d0[2][3] = {{0, 0, 0}, {0, 1, 0}};
+  auto rst = INNC::from_blob(rst_d0, {2, 3}, INNC::i8);
+  ASSERT_STRICT_APPROX(a.grad(), rst.type(a.type()));
+}
+
+TEST(autograd, min) {
+  auto a = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f32);
+  a.requires_grad(true);
+  a.min().backward();
+  std::int8_t rst_d0[2][3] = {{0, 0, 0}, {0, 0, 1}};
+  auto rst = INNC::from_blob(rst_d0, {2, 3}, INNC::i8);
+  ASSERT_STRICT_APPROX(a.grad(), rst.type(a.type()));
 }
 
 TEST(utils, utils) {
