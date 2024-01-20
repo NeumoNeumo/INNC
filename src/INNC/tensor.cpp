@@ -150,6 +150,14 @@ Tensor Tensor::reshape_as(const Tensor &input) {
   return fptr->reshape_as(*input.fptr);
 }
 
+Tensor Tensor::view(const Tensor &input, const SignedVec &sizes){
+  return Tensor(input.fptr->view(sizes));
+}
+
+Tensor Tensor::view(const SignedVec &sizes){
+  return Tensor(fptr->view(sizes));
+}
+
 bool Tensor::is_contiguous() const noexcept { return fptr->is_contiguous(); }
 Tensor Tensor::contiguous() const { return Tensor(fptr->contiguous()); }
 

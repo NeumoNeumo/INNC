@@ -20,7 +20,7 @@ public:
              const std::shared_ptr<UntypedStorage> &data_, Private);
   const std::shared_ptr<UntypedStorage> data_;
   std::shared_ptr<TensorImpl> grad;
-  const std::shared_ptr<Layout> view;
+  const std::shared_ptr<Layout> _view;
   const types dtype;
   const layouts dlayout;
   bool requires_grad; // TODO 3 stricter encapsulation
@@ -79,6 +79,8 @@ public:
   reshape(const std::shared_ptr<TensorImpl> &input, const SignedVec &sizes);
   std::shared_ptr<TensorImpl> reshape(const SignedVec &sizes);
   std::shared_ptr<TensorImpl> reshape_as(const TensorImpl &sizes);
+  static std::shared_ptr<TensorImpl> view(const std::shared_ptr<TensorImpl> &input, const SignedVec &sizes);
+  std::shared_ptr<TensorImpl> view(const SignedVec &sizes);
   std::shared_ptr<TensorImpl> sum();
   std::shared_ptr<TensorImpl> abs();
   std::shared_ptr<TensorImpl> max();

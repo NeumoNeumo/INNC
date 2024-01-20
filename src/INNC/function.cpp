@@ -44,7 +44,7 @@ void Backward::try_accumulate_update(TensorImpl *tf_prev, bool zero_init) {
   if (tf_prev->grad_fn.get() != nullptr)
     ++tf_prev->grad_fn->accumulated_n_outway;
   if (tf_prev->grad.get() == nullptr) {
-    tf_prev->grad = TensorImpl::create(tf_prev->dtype, tf_prev->view);
+    tf_prev->grad = TensorImpl::create(tf_prev->dtype, tf_prev->_view);
     if (zero_init)
       tf_prev->grad->data_->zero_();
   } else if (!tf_prev->grad->data_->is_alloc()) {

@@ -331,6 +331,10 @@ TEST(index, reshape) {
   a = INNC::ones({1}, INNC::i8);
   b = INNC::reshape(a, {});
   ASSERT_EQ(b.to_string(), "1");
+  float data[15] = {0.1, 1.2, 3.4, 5.6, 7.8, 2.2, 3.1, 4.5, 6.7, 8.9, 4.9, 5.2, 6.3, 7.4, 8.5};
+  a = INNC::from_blob(data, {3, 5}, INNC::f32);
+  ASSERT_STRICT_APPROX(a.view({5,3}), INNC::from_blob(data, {5, 3}, INNC::f32));
+  ASSERT_STRICT_APPROX(a.view({1,15}), INNC::from_blob(data, {1, 15}, INNC::f32));
 }
 
 TEST(autograd, add) {

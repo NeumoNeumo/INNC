@@ -82,6 +82,8 @@ public:
   static Tensor reshape(const Tensor &input, const SignedVec &sizes);
   Tensor reshape(const SignedVec &sizes);
   Tensor reshape_as(const Tensor &input);
+  static Tensor view(const Tensor &input, const SignedVec &sizes);
+  Tensor view(const SignedVec &sizes);
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;
   void requires_grad(bool b);
