@@ -184,4 +184,12 @@ Tensor Tensor::randn_like(const Tensor &t) {
   return Tensor(TensorImpl::randn_like(*t.fptr));
 }
 
+Tensor Tensor::full(const SizeVec &sv, std::int64_t num, types dtype) {
+  return Tensor(TensorImpl::full(sv, num, dtype));
+}
+
+Tensor Tensor::full(const SizeVec &sv, double num, types dtype) {
+  return Tensor(TensorImpl::full(sv, num, dtype));
+}
+
 } // namespace INNC

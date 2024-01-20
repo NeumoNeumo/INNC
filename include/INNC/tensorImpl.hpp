@@ -55,6 +55,10 @@ public:
   static std::shared_ptr<TensorImpl> ones(const SizeVec &sizes, types dtype);
   static std::shared_ptr<TensorImpl> zeros_like(const TensorImpl &t);
   static std::shared_ptr<TensorImpl> ones_like(const TensorImpl &t);
+  static std::shared_ptr<TensorImpl> full(const SizeVec &sv, std::int64_t num,
+                                          types dtype);
+  static std::shared_ptr<TensorImpl> full(const SizeVec &sv, double num,
+                                          types dtype);
   static std::shared_ptr<TensorImpl> from_blob(void *data, const SizeVec &sizes,
                                                types dtype);
   static std::shared_ptr<TensorImpl> randn(const SizeVec &sizes, types dtype);

@@ -215,6 +215,22 @@ std::shared_ptr<TensorImpl> TensorImpl::ones_like(const TensorImpl &t) {
   return TensorImpl::ones(t.view->sizes, t.dtype);
 }
 
+std::shared_ptr<TensorImpl> TensorImpl::full(const SizeVec &sizes,
+                                             std::int64_t num, types dtype) {
+  auto tmp = create(num);
+  auto ret = create(dtype, make_shared<StridedLayout>(sizes));
+  native::tensor_fill_helper::dispatch(dtype, i64)(ret.get(), tmp.get());
+  return ret;
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::full(const SizeVec &sizes, double num,
+                                             types dtype) {
+  auto tmp = create(num);
+  auto ret = create(dtype, make_shared<StridedLayout>(sizes));
+  native::tensor_fill_helper::dispatch(dtype, f64)(ret.get(), tmp.get());
+  return ret;
+}
+
 std::shared_ptr<TensorImpl>
 TensorImpl::from_blob(void *data, const SizeVec &sizes, types dtype) {
   auto ret = create(dtype, StridedLayout{sizes});

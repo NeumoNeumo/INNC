@@ -61,6 +61,13 @@ TEST(basic, initialization) {
   ASSERT_EQ(b.to_string(), std::to_string(double(1)));
   a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
   ASSERT_EQ(a.to_string(), output_i8_1);
+  a = INNC::full({2, 3, 3}, -1l, INNC::i32);
+  ASSERT_STRICT_APPROX(a.sum(), INNC::Tensor(-18l));
+  a = INNC::full({1}, -2.0, INNC::f64);
+  ASSERT_STRICT_APPROX(a.sum(), INNC::Tensor(-2.0));
+  a = INNC::full({0}, -2.0, INNC::f64);
+  ASSERT_EQ(a.size().to_string(), "[0]");
+  ASSERT_EQ(a.to_string(), "[]");
 }
 
 TEST(basic, type) {

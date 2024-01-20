@@ -67,6 +67,8 @@ public:
   static Tensor ones(const SizeVec &size, types t);
   static Tensor zeros_like(const Tensor &t);
   static Tensor ones_like(const Tensor &t);
+  static Tensor full(const SizeVec &size, std::int64_t num, types dtype);
+  static Tensor full(const SizeVec &size, double num, types dtype);
   static Tensor from_blob(void *data, const SizeVec &sizes, types dtype);
   static Tensor randn(const SizeVec &sizes, types dtype);
   static Tensor randn_like(const Tensor &t);
