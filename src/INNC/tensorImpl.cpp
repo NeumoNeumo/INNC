@@ -13,7 +13,8 @@
 #include <cstring>
 #include <queue>
 #include <unordered_set>
-
+#include <unordered_map>
+bool areIsomorphic(const std::string &s1, const std::string &s2);
 namespace INNC {
 
 size_t TensorImpl::dim() const noexcept { return view->dim(); }
@@ -201,7 +202,207 @@ TensorImpl &TensorImpl::operator+=(const TensorImpl &rhs) {
       this, this, const_cast<TensorImpl *>(&rhs));
   return *this;
 }
+std::shared_ptr<TensorImpl>
+einsum(const std::string &str,
+       const std::vector<std::shared_ptr<TensorImpl>> &ts) {
+  std::vector<std::shared_ptr<TensorImpl>> ats = ts;
 
+  for (auto &t : ts) {
+    run_expect(t->dtype == f64, "only f64 is supported");
+  }
+
+  if (areIsomorphic(str, "ii->i")) {
+    run_expect(ats.size() == 1, "error number of tensor");
+    run_expect(ats[0]->dim() == 2 &&
+                   ats[0]->view->sizes[0] == ats[0]->view->sizes[1],
+               "unmatched dimension");
+    auto srcTensor = ats[0];
+    auto maxn = srcTensor->size()[0];
+
+    std::shared_ptr<TensorImpl> ret =
+        TensorImpl::ones({maxn}, srcTensor->dtype);
+
+    auto ret_ptr1 = reinterpret_cast<double *>(ats[0]->data_->get_blob());
+    auto ret_ptr2 = reinterpret_cast<double *>(ret->data_->get_blob());
+
+    for (size_t i = 0; i < maxn; i++) {
+      auto dst = ret_ptr2 + ret->cnt_from_index({i});
+      auto src = ret_ptr1 + ret->cnt_from_index({i, i});
+      *dst = *src;
+    }
+
+    return ret;
+
+  } else if (areIsomorphic(str, "ij->ji")) {
+    run_expect(ats.size() == 1, "error number of tensor");
+    run_expect(ats[0]->view->sizes.size() == 2 &&
+               ats[0]->view->sizes[0] == ats[0]->view->sizes[1]);
+    return TensorImpl::transpose(ats[0], 0, 1);
+
+  } else if (areIsomorphic(str, "...ij->...ji")) {
+    run_expect(ats.size() == 1, "error number of tenser");
+    int k = ats[0]->view->sizes.size();
+    run_expect(ats[0]->view->sizes[0] == ats[k - 2]->view->sizes[k - 1],
+               "error");
+    return TensorImpl::transpose(ats[0], k - 1, k - 2);
+
+  } else if (areIsomorphic(str, "ij->")) {
+    run_expect(ats.size() == 1, "error number of tenser");
+    run_expect(ats[0]->view->sizes.size() == 2 &&
+                   ats[0]->view->sizes[0] == ats[0]->view->sizes[1],
+               "size error");
+    std::shared_ptr<TensorImpl> ans = TensorImpl::zeros({1}, ats[0]->dtype);
+    auto ret_ptr1 = reinterpret_cast<double *>(ats[0]->data_->get_blob());
+    auto ret_ptr2 = reinterpret_cast<double *>(ans->data_->get_blob());
+    for (size_t i = 0; i < ats[0]->view->sizes[0]; i++) {
+      for (size_t j = 0; j < ats[0]->view->sizes[1]; j++) {
+        auto dst = ret_ptr2;
+        auto src = ret_ptr1 + ans->cnt_from_index({i, j});
+        *dst += *src;
+      }
+    }
+    return ans;
+
+  } else if (areIsomorphic(str, "ik->i")) {
+    run_expect(ats.size() == 1, "error number of tenser");
+    run_expect(ats[0]->view->sizes.size() == 2, "size error");
+    std::shared_ptr<TensorImpl> ans =
+        TensorImpl::zeros({ats[0]->view->sizes[0]}, ats[0]->dtype);
+    auto ret_ptr1 = reinterpret_cast<double *>(ats[0]->data_->get_blob());
+    auto ret_ptr2 = reinterpret_cast<double *>(ans->data_->get_blob());
+    for (size_t i = 0; i < ats[0]->view->sizes[0]; i++) {
+      for (size_t j = 0; j < ats[0]->view->sizes[1]; j++) {
+        auto dst = ret_ptr2 + ans->cnt_from_index({i});
+
+        auto src = ret_ptr1 + ans->cnt_from_index({i, j});
+        *dst += *src;
+      }
+    }
+    return ans;
+
+  } else if (areIsomorphic(str, "i,i->")) {
+    run_expect(ats.size() == 2, "error number of tenser");
+    run_expect(ats[0]->view->sizes.size() == 2, "size error");
+
+    auto op1 = ats[0];
+    auto op2 = ats[1];
+    auto ans = TensorImpl::zeros({1}, op1->dtype);
+    auto maxi = op1->view->sizes[0];
+
+    auto op1Ptr = reinterpret_cast<double *>(op1->data_->get_blob());
+    auto op2Ptr = reinterpret_cast<double *>(op2->data_->get_blob());
+    auto retPtr = reinterpret_cast<double *>(ans->data_->get_blob());
+
+    for (size_t i = 0; i < maxi; i++) {
+      *retPtr +=
+          op1Ptr[op1->cnt_from_index({i})] * op2Ptr[op2->cnt_from_index({i})];
+    }
+    return ans;
+
+  } else if (areIsomorphic(str, "ij,ij->")) {
+    run_expect(ats.size() == 2, "error number of tenser");
+    run_expect(ats[0]->dim() == 2, "size error");
+
+    auto op1 = ats[0];
+    auto op2 = ats[1];
+    auto ans = TensorImpl::zeros({1}, op1->dtype);
+    auto maxi = op1->view->sizes[0];
+    auto maxj = op1->view->sizes[1];
+
+    auto op1Ptr = reinterpret_cast<double *>(op1->data_->get_blob());
+    auto op2Ptr = reinterpret_cast<double *>(op2->data_->get_blob());
+    auto retPtr = reinterpret_cast<double *>(ans->data_->get_blob());
+
+    for (size_t i = 0; i < maxi; i++) {
+      for (size_t j = 0; j < maxj; j++) {
+        *retPtr += op1Ptr[op1->cnt_from_index({i, j})] *
+                   op2Ptr[op2->cnt_from_index({i, j})];
+      }
+    }
+    return ans;
+
+  } else if (areIsomorphic(str, "i,j->ij")) {
+    run_expect(ats.size() == 2, "error number of tenser");
+    run_expect(ats[0]->view->sizes.size() == 2, "size error");
+
+    auto op1 = ats[0];
+    auto op2 = ats[1];
+    auto maxi = op1->view->sizes[0];
+    auto maxj = op1->view->sizes[1];
+    auto ans = TensorImpl::zeros({maxi, maxj}, op1->dtype);
+
+    auto op1Ptr = reinterpret_cast<double *>(op1->data_->get_blob());
+    auto op2Ptr = reinterpret_cast<double *>(op2->data_->get_blob());
+    auto retPtr = reinterpret_cast<double *>(ans->data_->get_blob());
+
+    for (size_t i = 0; i < maxi; i++) {
+      for (size_t j = 0; j < maxj; j++) {
+        retPtr[ans->cnt_from_index({i, j})] =
+            op1Ptr[op1->cnt_from_index({i})] * op2Ptr[op2->cnt_from_index({j})];
+      }
+    }
+    return ans;
+
+  } else if (areIsomorphic(str, "ijk,ikl->ijl")) {
+    run_expect(ats.size() == 2, "error number of tenser");
+    run_expect(ats[0]->view->sizes.size() == 2, "size error");
+
+    auto op1 = ats[0];
+    auto op2 = ats[1];
+    auto maxi = op1->view->sizes[0];
+    auto maxj = op1->view->sizes[1];
+    auto maxk = op1->view->sizes[2];
+    auto maxl = op2->view->sizes[2];
+    auto ans = TensorImpl::zeros({maxi, maxj, maxl}, op1->dtype);
+
+    auto op1Ptr = reinterpret_cast<double *>(op1->data_->get_blob());
+    auto op2Ptr = reinterpret_cast<double *>(op2->data_->get_blob());
+    auto retPtr = reinterpret_cast<double *>(ans->data_->get_blob());
+
+    for (size_t i = 0; i < maxi; i++) {
+      for (size_t j = 0; j < maxj; j++) {
+        for (size_t l = 0; l < maxl; l++) {
+          for (size_t k = 0; k < maxk; k++) {
+            retPtr[ans->cnt_from_index({i, j, l})] +=
+                op1Ptr[op1->cnt_from_index({i, j, k})] *
+                op2Ptr[op2->cnt_from_index({i, k, l})];
+          }
+        }
+      }
+    }
+    return ans;
+
+  } else if (areIsomorphic(str, "ik,jkl->ij")) {
+    run_expect(ats.size() == 2, "error number of tenser");
+    run_expect(ats[0]->view->sizes.size() == 2, "size error");
+    run_expect(ats[0]->view->sizes.size() == 3, "size error");
+
+    auto op1 = ats[0];
+    auto op2 = ats[1];
+    auto maxi = op1->view->sizes[0];
+    auto maxj = op1->view->sizes[1];
+    auto maxk = op1->view->sizes[2];
+    auto maxl = op2->view->sizes[2];
+    auto ans = TensorImpl::zeros({maxi, maxj}, op1->dtype);
+
+    auto op1Ptr = reinterpret_cast<double *>(op1->data_->get_blob());
+    auto op2Ptr = reinterpret_cast<double *>(op2->data_->get_blob());
+    auto retPtr = reinterpret_cast<double *>(ans->data_->get_blob());
+
+    for (size_t i = 0; i < maxi; i++) {
+      for (size_t j = 0; j < maxj; j++) {
+        for (size_t k = 0; k < maxk; k++) {
+          for (size_t l = 0; l < maxl; l++) {
+            retPtr[ans->cnt_from_index({i, j})] +=
+                op1Ptr[op1->cnt_from_index({i, k})] *
+                op2Ptr[op2->cnt_from_index({j, k, l})];
+          }
+        }
+      }
+    }
+    return ans;
+  }
+}
 std::shared_ptr<TensorImpl> TensorImpl::ones(const SizeVec &sizes,
                                              types dtype) {
   auto one_ = create(i8, SizeVec{});
@@ -904,3 +1105,42 @@ TensorImpl::cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_ts,
 }
 
 } // namespace INNC
+bool areIsomorphic(const std::string &s1, const std::string &s2) {
+  std::unordered_map<char, char> map1;
+  std::unordered_map<char, char> map2;
+  int i = 0, j = 0;
+  while (i < s1.length() && j < s2.length()) {
+    // 跳过s1中的空格
+    while (i < s1.length() && s1[i] == ' ') {
+      ++i;
+    }
+    // 跳过s2中的空格
+    while (j < s2.length() && s2[j] == ' ') {
+      ++j;
+    }
+    // 如果一个字符串结束而另一个没有，则它们不同构
+    if ((i < s1.length()) ^ (j < s2.length())) {
+      return false;
+    }
+    // 如果两个字符串都结束了，则它们同构
+    if (i >= s1.length() && j >= s2.length()) {
+      return true;
+    }
+
+    char ch1 = s1[i];
+    char ch2 = s2[j];
+
+    if ((map1.find(ch1) != map1.end() && map1[ch1] != ch2) ||
+        (map2.find(ch2) != map2.end() && map2[ch2] != ch1)) {
+      return false;
+    }
+
+    map1[ch1] = ch2;
+    map2[ch2] = ch1;
+
+    ++i;
+    ++j;
+  }
+
+  return true;
+}
