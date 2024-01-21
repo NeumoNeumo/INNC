@@ -67,6 +67,8 @@ public:
   static Tensor ones(const SizeVec &size, types t);
   static Tensor zeros_like(const Tensor &t);
   static Tensor ones_like(const Tensor &t);
+  static Tensor eye(size_t n, types dtype = types::i8);
+  static Tensor eye(size_t n, size_t m, types dtype = types::i8);
   static Tensor from_blob(void *data, const SizeVec &sizes, types dtype);
   static Tensor randn(const SizeVec &sizes, types dtype);
   static Tensor randn_like(const Tensor &t);

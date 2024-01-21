@@ -55,6 +55,8 @@ public:
   static std::shared_ptr<TensorImpl> ones(const SizeVec &sizes, types dtype);
   static std::shared_ptr<TensorImpl> zeros_like(const TensorImpl &t);
   static std::shared_ptr<TensorImpl> ones_like(const TensorImpl &t);
+  static std::shared_ptr<TensorImpl> eye(size_t n, types dtype = types::i8);
+  static std::shared_ptr<TensorImpl> eye(size_t n, size_t m, types dtype = types::i8);
   static std::shared_ptr<TensorImpl> from_blob(void *data, const SizeVec &sizes,
                                                types dtype);
   static std::shared_ptr<TensorImpl> randn(const SizeVec &sizes, types dtype);

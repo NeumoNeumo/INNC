@@ -61,6 +61,10 @@ TEST(basic, initialization) {
   ASSERT_EQ(b.to_string(), std::to_string(double(1)));
   a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
   ASSERT_EQ(a.to_string(), output_i8_1);
+  std::int8_t data_1[3][3] = {{1, 0, 0}, {0,1,0}, {0,0,1}};
+  ASSERT_STRICT_APPROX(INNC::Tensor::eye(3), INNC::from_blob(data_1, {3, 3}, INNC::i8));
+  std::int8_t data_2[2][3] = {{1, 0, 0}, {0,1,0}};
+  ASSERT_STRICT_APPROX(INNC::Tensor::eye(2, 3), INNC::from_blob(data_2, {2, 3}, INNC::i8));
 }
 
 TEST(basic, type) {
