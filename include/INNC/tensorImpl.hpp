@@ -63,6 +63,9 @@ public:
                                                types dtype);
   static std::shared_ptr<TensorImpl> randn(const SizeVec &sizes, types dtype);
   static std::shared_ptr<TensorImpl> randn_like(const TensorImpl &t);
+  static std::shared_ptr<TensorImpl>
+  einsum(const std::string &str,
+         const std::vector<std::shared_ptr<TensorImpl>> &ts);
   size_t numel() const noexcept;
   void release() noexcept;
   INNC::types type() const;
