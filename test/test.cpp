@@ -69,6 +69,12 @@ TEST(basic, initialization) {
   a = INNC::full({0}, -2.0, INNC::f64);
   ASSERT_EQ(a.size().to_string(), "[0]");
   ASSERT_EQ(a.to_string(), "[]");
+  std::int8_t data_1[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+  ASSERT_STRICT_APPROX(INNC::Tensor::eye(3),
+                       INNC::from_blob(data_1, {3, 3}, INNC::i8));
+  std::int8_t data_2[2][3] = {{1, 0, 0}, {0, 1, 0}};
+  ASSERT_STRICT_APPROX(INNC::Tensor::eye(2, 3),
+                       INNC::from_blob(data_2, {2, 3}, INNC::i8));
 }
 
 TEST(basic, type) {

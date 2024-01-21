@@ -52,6 +52,13 @@ Tensor Tensor::ones_like(const Tensor &t) {
   return Tensor(TensorImpl::ones_like(*t.fptr));
 }
 
+Tensor Tensor::eye(size_t n, types dtype) {
+  return Tensor(TensorImpl::eye(n, dtype));
+}
+Tensor Tensor::eye(size_t n, size_t m, types dtype) {
+  return Tensor(TensorImpl::eye(n, m, dtype));
+}
+
 Tensor Tensor::from_blob(void *data, const SizeVec &sizes, types dtype) {
   return Tensor(TensorImpl::from_blob(data, sizes, dtype));
 }
