@@ -3,6 +3,7 @@
 #include "INNC/tensorImpl.hpp"
 #include "INNC/types.hpp"
 #include "INNC/utils/utils.hpp"
+#include <iostream>
 
 namespace INNC {
 namespace native {
@@ -121,6 +122,7 @@ void tensor_sum(TensorImpl *to, const TensorImpl *from) {
 
 template <typename ToType, typename FromType>
 void tensor_mean(TensorImpl *to, const TensorImpl *from) {
+  std::cout << "opop" << to->to_string() << from->to_string() << std::endl;
   if (from->view->numel() == 0)
     return;
   SizeVec sv;
@@ -136,12 +138,14 @@ void tensor_mean(TensorImpl *to, const TensorImpl *from) {
     while (true) {
       size_t ptr = last_idx;
       while (sv[ptr] == data_sizes[ptr]) {
-        if (ptr == 0)
+        if (ptr == 0){
+        *to_ptr = *(to_ptr) / n;
           return;
+        }
         sv[ptr] = 0;
         ++sv[--ptr];
       }
-      *to_ptr += *(from_ptr + from->cnt_from_index(sv)) / n;
+      *to_ptr += *(from_ptr + from->cnt_from_index(sv));
       ++sv[last_idx];
     }
   } else {
@@ -152,6 +156,7 @@ void tensor_mean(TensorImpl *to, const TensorImpl *from) {
       throw std::logic_error("Not implemented yet");
     }
   }
+  *to_ptr = *(to_ptr) / n;
 }
 
 template <typename D, typename L, typename R>

@@ -69,6 +69,9 @@ TEST(basic, initialization) {
   a = INNC::full({0}, -2.0, INNC::f64);
   ASSERT_EQ(a.size().to_string(), "[0]");
   ASSERT_EQ(a.to_string(), "[]");
+  a = INNC::full({2, 3, 3}, -1l, INNC::i32);
+  std::cout << a.mean().to_string() << std::endl;
+  ASSERT_STRICT_APPROX(a.mean(), INNC::Tensor(-1l).type(INNC::i64));
 }
 
 TEST(basic, type) {
