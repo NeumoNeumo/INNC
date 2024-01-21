@@ -92,6 +92,7 @@ public:
   size_t dim() const noexcept;
   Tensor grad() const noexcept;
   Tensor sum() const;
+  Tensor mean() const;
   Tensor abs() const;
   Tensor max() const;
   Tensor min() const;

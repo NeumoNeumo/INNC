@@ -119,6 +119,41 @@ void tensor_sum(TensorImpl *to, const TensorImpl *from) {
   }
 }
 
+template <typename ToType, typename FromType>
+void tensor_mean(TensorImpl *to, const TensorImpl *from) {
+  if (from->view->numel() == 0)
+    return;
+  SizeVec sv;
+  ToType n = from->view->numel();
+  auto &data_sizes = from->view->sizes;
+  auto last_idx = data_sizes.size() - 1;
+  ToType *to_ptr = reinterpret_cast<ToType *>(to->data_->get_blob());
+  FromType *from_ptr = reinterpret_cast<FromType *>(from->data_->get_blob());
+  if (__LIKELY(from->view->dim() != 0)) {
+    sv.resize(last_idx + 1);
+    for (auto &it : sv)
+      it = 0;
+    while (true) {
+      size_t ptr = last_idx;
+      while (sv[ptr] == data_sizes[ptr]) {
+        if (ptr == 0)
+          return;
+        sv[ptr] = 0;
+        ++sv[--ptr];
+      }
+      *to_ptr += *(from_ptr + from->cnt_from_index(sv)) / n;
+      ++sv[last_idx];
+    }
+  } else {
+    if (from->dlayout == layouts::strided) {
+      *to_ptr =
+          *(from_ptr + dynamic_cast<StridedLayout *>(from->view.get())->offset);
+    } else {
+      throw std::logic_error("Not implemented yet");
+    }
+  }
+}
+
 template <typename D, typename L, typename R>
 void tensor_mul_acc_f(TensorImpl *dst, const TensorImpl *l,
                       const TensorImpl *r) {
@@ -371,6 +406,7 @@ generate_binary_op_helper(tensor_ne);
 generate_unary_op_helper(tensor_fill);
 generate_unary_op_helper(tensor_to_type);
 generate_unary_op_helper(tensor_sum);
+generate_unary_op_helper(tensor_mean);
 generate_unary_op_helper(tensor_clone);
 generate_unary_grad_op_helper(tensor_abs);
 generate_ffi_op_helper(tensor_mul_acc_f);
