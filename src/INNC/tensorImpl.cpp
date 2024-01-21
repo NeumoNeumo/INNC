@@ -545,14 +545,15 @@ TensorImpl::transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0,
 std::shared_ptr<TensorImpl> TensorImpl::transpose(size_t dim0, size_t dim1) {
   return TensorImpl::transpose(shared_from_this(), dim0, dim1);
 }
+
 std::shared_ptr<TensorImpl>
 TensorImpl::permute(const std::shared_ptr<TensorImpl> &input,
                     const SizeVec dims) {
   run_expect(dims.size() >= 2,
              "the size of dims for permute must be greater dim 2.");
   auto dim = input->dim();
-  std::unordered_set<int> unique_nums;
-  for (int num : dims) {
+  std::unordered_set<size_t> unique_nums;
+  for (size_t num : dims) {
     run_expect(num >= 0 && num < dim, "Index out of range dimension ", dim,
                ". Actual input of "
                "permute: (",
@@ -580,6 +581,7 @@ TensorImpl::permute(const std::shared_ptr<TensorImpl> &input,
   share_grad_storage(*ret, *input);
   return ret;
 }
+
 std::shared_ptr<TensorImpl> TensorImpl::permute(const SizeVec dims) {
   return TensorImpl::permute(shared_from_this(), dims);
 }

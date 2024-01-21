@@ -281,9 +281,11 @@ TEST(index, transpose) {
   b = INNC::from_blob(f64_arr, {2, 3}, INNC::f64);
   ASSERT_EQ(a.to_string(), b.to_string());
   ASSERT_EQ(a.transpose(0, 1).transpose(0, 1).to_string(), a.to_string());
+}
 
-  a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
-  b = INNC::transpose(a, 0, 1);
+TEST(index, permute){
+  auto a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
+  auto b = INNC::transpose(a, 0, 1);
   ASSERT_EQ(b.to_string(), "[[0, 3, 6, 9], [1, 4, 7, 10], [2, 5, 8, 11]]");
   a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
   b = a.permute(a, {0, 1});
@@ -294,6 +296,7 @@ TEST(index, transpose) {
             "[[[0, 6], [2, 8], [4, 10]], [[1, 7], [3, 9], [5, 11]]]");
   a = INNC::from_blob(data_i8_1, {3, 2}, INNC::i8).type(INNC::f64);
   a = a.permute({0, 1});
+  double f64_arr[6] = {1, -5, -9, -3, 7, 11};
   b = INNC::from_blob(f64_arr, {2, 3}, INNC::f64);
   ASSERT_EQ(a.to_string(), b.to_string());
   ASSERT_EQ(a.permute({0, 1}).permute({0, 1}).to_string(), a.to_string());
@@ -505,6 +508,23 @@ TEST(autograd, transpose) {
   a.zero_grad();
   a.transpose(0, 1).transpose(0, 1).transpose(0, 1).sum().backward();
   ASSERT_EQ(a.grad().to_string(), INNC::ones_like(a).to_string());
+}
+
+TEST(autograd, permute){
+  auto a = INNC::from_blob(data_i16_1, {1, 2, 3}, INNC::i16).type(INNC::f64);
+  auto b = INNC::from_blob(data_i8_1, {2,3,1}, INNC::i8).type(INNC::f64);
+  a.requires_grad(true);
+  b.requires_grad(true);
+  auto c = b.permute({0,1,2});
+  std::cout << c.size() << std::endl;
+  c.retain_grad(true);
+  (a * c).sum().backward();
+  ASSERT_STRICT_APPROX(a.grad(), c);
+  ASSERT_STRICT_APPROX(c.grad(), a);
+  ASSERT_STRICT_APPROX(b.grad(), a.permute({0,2,1}));
+  a.zero_grad();
+  a.permute({0, 1, 2}).permute({0, 1, 2}).permute({0, 1, 2}).permute({0, 1, 2}).sum().backward();
+  ASSERT_STRICT_APPROX(a.grad(), INNC::ones_like(a));
 }
 
 TEST(autograd, clone) {
