@@ -409,6 +409,18 @@ TEST(autograd, add) {
   ASSERT_EQ(a.grad().to_string(), INNC::Tensor(float(0)).to_string());
 }
 
+TEST(autograd, sum){
+  auto a = INNC::ones({2, 3}, INNC::f64);
+  auto b = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8).type(INNC::f32);
+  a.requires_grad(true);
+  b.requires_grad(true);
+  a.retain_grad(true);
+  b.retain_grad(true);
+  auto c = a.sum() * b.sum();
+  c.backward();
+  ASSERT_STRICT_APPROX(a.grad(), INNC::ones({2, 3}, INNC::f64) * a.sum());
+}
+
 TEST(autograd, substract) {
   auto a = INNC::ones({2, 3}, INNC::f64);
   auto b = INNC::ones({2, 1}, INNC::f32);
