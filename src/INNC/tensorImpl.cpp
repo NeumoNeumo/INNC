@@ -12,6 +12,7 @@
 #include "INNC/utils/utils.hpp"
 #include <cstring>
 #include <queue>
+#include <unordered_set>
 
 namespace INNC {
 
@@ -582,6 +583,50 @@ TensorImpl::transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0,
   ret->grad_fn.reset(new NoBack(ret.get(), {input}));
   share_grad_storage(*ret, *input);
   return ret;
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::transpose(size_t dim0, size_t dim1) {
+  return TensorImpl::transpose(shared_from_this(), dim0, dim1);
+}
+
+std::shared_ptr<TensorImpl>
+TensorImpl::permute(const std::shared_ptr<TensorImpl> &input,
+                    const SizeVec dims) {
+  run_expect(dims.size() >= 2,
+             "the size of dims for permute must be greater dim 2.");
+  auto dim = input->dim();
+  std::unordered_set<size_t> unique_nums;
+  for (size_t num : dims) {
+    run_expect(num >= 0 && num < dim, "Index out of range dimension ", dim,
+               ". Actual input of "
+               "permute: (",
+               dims.to_string(), ")");
+    auto result = unique_nums.insert(num);
+    run_expect(result.second, "dims must be distinguished. But they are ",
+               dims.to_string());
+  }
+
+  auto view_s = dynamic_cast<StridedLayout *>(input->view.get());
+  SizeVec _sizes = view_s->sizes;
+  SignedVec _strides = view_s->strides;
+  for (size_t i = 1; i < dims.size(); i++) {
+    std::swap(_sizes[dims[0]], _sizes[dims[i]]);
+    std::swap(_strides[dims[0]], _strides[dims[i]]);
+  }
+  auto ret =
+      create(input->dtype,
+             std::make_unique<StridedLayout>(_sizes, _strides, view_s->offset),
+             input->data_);
+  if (!input->requires_grad)
+    return ret;
+  ret->requires_grad = true;
+  ret->grad_fn.reset(new NoBack(ret.get(), {input}));
+  share_grad_storage(*ret, *input);
+  return ret;
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::permute(const SizeVec dims) {
+  return TensorImpl::permute(shared_from_this(), dims);
 }
 
 SizeVec regularize_size(const SignedVec &sizes, size_t numel = 0) {

@@ -76,6 +76,10 @@ public:
   std::shared_ptr<TensorImpl> operator[](const std::string &slice);
   static std::shared_ptr<TensorImpl>
   transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0, size_t dim1);
+  std::shared_ptr<TensorImpl> transpose(size_t dim0, size_t dim1);
+  static std::shared_ptr<TensorImpl>
+  permute(const std::shared_ptr<TensorImpl> &input, const SizeVec dims);
+  std::shared_ptr<TensorImpl> permute(const SizeVec dims);
   static std::shared_ptr<TensorImpl>
   reshape(const std::shared_ptr<TensorImpl> &input, const SizeVec &sizes);
   std::shared_ptr<TensorImpl> reshape(const SizeVec &sizes);
