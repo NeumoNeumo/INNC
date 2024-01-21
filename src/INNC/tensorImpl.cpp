@@ -375,7 +375,7 @@ std::shared_ptr<TensorImpl> TensorImpl::mean() {
   native::tensor_mean_helper::dispatch(dst_t, dtype)(tf.get(), this);
   if (requires_grad) {
     tf->requires_grad = true;
-    tf->grad_fn.reset(new SumBack(tf.get(), {shared_from_this()}));
+    tf->grad_fn.reset(new MeanBack(tf.get(), {shared_from_this()}));
   }
   return tf;
 }

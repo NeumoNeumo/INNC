@@ -92,6 +92,11 @@ void SumBack::step_back() {
                       TensorImpl::ones_like(*input_tfs[0]).get());
 }
 
+void MeanBack::step_back() {
+  try_accumulate_grad(input_tfs[0].get(),
+                      TensorImpl::full(input_tfs[0]->view->sizes, 1./((double)input_tfs[0]->numel()), input_tfs[0]->dtype).get());
+}
+
 void NoBack::step_back() { try_accumulate_grad(input_tfs[0].get(), nullptr); }
 
 void CloneBack::step_back() {

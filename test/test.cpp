@@ -69,10 +69,6 @@ TEST(basic, initialization) {
   a = INNC::full({0}, -2.0, INNC::f64);
   ASSERT_EQ(a.size().to_string(), "[0]");
   ASSERT_EQ(a.to_string(), "[]");
-  a = INNC::full({2, 3, 3}, -1l, INNC::i32);
-  ASSERT_STRICT_APPROX(a.mean(), INNC::Tensor(-1l).type(INNC::i64));
-  a = INNC::from_blob(data_i16_2, {2,2,3}, INNC::i16).type(INNC::f32);
-  ASSERT_STRICT_APPROX(a.mean(), INNC::Tensor(-1l).type(INNC::f64));
 }
 
 TEST(basic, type) {
@@ -213,6 +209,17 @@ TEST(arithmetic, sum) {
   ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(3)));
   a = INNC::ones({1}, INNC::i16);
   ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(1)));
+}
+
+TEST(arithmetic, mean) {
+  auto a = INNC::full({2, 3, 3}, -1l, INNC::i32);
+  ASSERT_STRICT_APPROX(a.mean(), INNC::Tensor(-1l).type(INNC::i64));
+  a = INNC::from_blob(data_i16_2, {2,2,3}, INNC::i16).type(INNC::f32);
+  ASSERT_STRICT_APPROX(a.mean(), INNC::Tensor(5.5).type(INNC::f64));
+  a = std::int16_t(3);
+  ASSERT_EQ(a.mean().to_string(), std::to_string(std::int16_t(3)));
+  a = INNC::ones({1}, INNC::i16);
+  ASSERT_EQ(a.mean().to_string(), std::to_string(std::int16_t(1)));
 }
 
 TEST(arithmetic, max) {
