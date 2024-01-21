@@ -70,8 +70,9 @@ TEST(basic, initialization) {
   ASSERT_EQ(a.size().to_string(), "[0]");
   ASSERT_EQ(a.to_string(), "[]");
   a = INNC::full({2, 3, 3}, -1l, INNC::i32);
-  std::cout << a.mean().to_string() << std::endl;
   ASSERT_STRICT_APPROX(a.mean(), INNC::Tensor(-1l).type(INNC::i64));
+  a = INNC::from_blob(data_i16_2, {2,2,3}, INNC::i16).type(INNC::f32);
+  ASSERT_STRICT_APPROX(a.mean(), INNC::Tensor(-1l).type(INNC::f64));
 }
 
 TEST(basic, type) {

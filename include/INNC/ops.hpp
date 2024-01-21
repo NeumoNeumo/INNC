@@ -122,7 +122,6 @@ void tensor_sum(TensorImpl *to, const TensorImpl *from) {
 
 template <typename ToType, typename FromType>
 void tensor_mean(TensorImpl *to, const TensorImpl *from) {
-  std::cout << "opop" << to->to_string() << from->to_string() << std::endl;
   if (from->view->numel() == 0)
     return;
   SizeVec sv;
