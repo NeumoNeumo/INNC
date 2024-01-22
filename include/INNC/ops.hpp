@@ -3,6 +3,7 @@
 #include "INNC/tensorImpl.hpp"
 #include "INNC/types.hpp"
 #include "INNC/utils/utils.hpp"
+#include <math.h>
 
 namespace INNC {
 namespace native {
@@ -238,6 +239,40 @@ void tensor_min(TensorImpl *to, const TensorImpl *from,
       grad->cnt_from_index(min_sv)) = 1;
 }
 
+template <typename ToType, typename FromType>
+void tensor_log(TensorImpl *to, const TensorImpl *from,
+                const TensorImpl *grad = nullptr) {
+  if (to->dlayout != layouts::strided)
+    throw std::logic_error(
+        sformat("The layout %s of output has not been implemented",
+                to_string(to->dlayout).c_str()));
+  if (from->dlayout != layouts::strided)
+    throw std::logic_error(
+        sformat("The layout %s of input has not been implemented",
+                to_string(from->dlayout).c_str()));
+  ToType *to_ptr = reinterpret_cast<ToType *>(to->data_->get_blob());
+  FromType *from_ptr = reinterpret_cast<FromType *>(from->data_->get_blob());
+  if (grad == nullptr)
+    for_each_sizevec(to->view->sizes, [=](const SizeVec &sv) {
+      FromType tmp = *(from_ptr + from->cnt_from_index(sv));
+      if(tmp <= 0) throw std::logic_error("The layout log(-1) of input has not been implemented.");
+      *(to_ptr + to->cnt_from_index(sv)) = log(tmp);
+    });
+  else {
+    FromType *grad_ptr = reinterpret_cast<FromType *>(grad->data_->get_blob());
+    for_each_sizevec(to->view->sizes, [=](const SizeVec &sv) {
+      FromType tmp = *(from_ptr + from->cnt_from_index(sv));
+      if (tmp >= 0) {
+        *(grad_ptr + grad->cnt_from_index(sv)) = 1/tmp;
+        *(to_ptr + to->cnt_from_index(sv)) = log(tmp);
+      } else {
+        throw std::logic_error(
+        "The layout log(-1) of input has not been implemented.");
+      }
+    });
+  }
+}
+
 template <typename L, typename R>
 void tensor_lt(TensorImpl *dst, const TensorImpl *l, const TensorImpl *r) {
   auto dst_ptr = reinterpret_cast<char *>(dst->data_->get_blob());
@@ -373,6 +408,7 @@ generate_unary_op_helper(tensor_to_type);
 generate_unary_op_helper(tensor_sum);
 generate_unary_op_helper(tensor_clone);
 generate_unary_grad_op_helper(tensor_abs);
+generate_unary_grad_op_helper(tensor_log);
 generate_ffi_op_helper(tensor_mul_acc_f);
 generate_ffi_op_helper(tensor_div_back_numerator);
 generate_ff_op4_helper(tensor_div_back_denominator);

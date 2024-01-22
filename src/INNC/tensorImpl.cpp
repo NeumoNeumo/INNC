@@ -426,6 +426,21 @@ std::shared_ptr<TensorImpl> TensorImpl::min() {
   return ret;
 }
 
+std::shared_ptr<TensorImpl> TensorImpl::log() {
+  auto ret = create(dtype, view);
+  if (!requires_grad) {
+    native::tensor_log_helper::dispatch(dtype, dtype)(ret.get(), this, nullptr);
+  } else {
+    auto grad = create(dtype, view);
+    native::tensor_log_helper::dispatch(dtype, dtype)(ret.get(), this,
+                                                      grad.get());
+    ret->requires_grad = true;
+    ret->grad_fn.reset(
+        new KnownGradBack(ret.get(), {shared_from_this()}, grad));
+  }
+  return ret;
+}
+
 void TensorImpl::zero_grad() const noexcept {
   if (grad.get() == nullptr)
     return;

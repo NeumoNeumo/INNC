@@ -94,6 +94,7 @@ public:
   std::shared_ptr<TensorImpl> abs();
   std::shared_ptr<TensorImpl> max();
   std::shared_ptr<TensorImpl> min();
+  std::shared_ptr<TensorImpl> log();
   void zero_grad() const noexcept;
   std::shared_ptr<TensorImpl> operator-();
   std::shared_ptr<TensorImpl> operator+();

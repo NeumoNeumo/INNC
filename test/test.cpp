@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <type_traits>
+#include <math.h>
 
 std::int8_t data_i8_1[6] = {1, -3, -5, 7, -9, 11};
 std::int16_t data_i16_1[6] = {0, -2, 4, 6, 8, -10};
@@ -215,6 +216,13 @@ TEST(arithmetic, sum) {
   ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(3)));
   a = INNC::ones({1}, INNC::i16);
   ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(1)));
+}
+ 
+TEST(arithmetic, log) {
+  auto a = INNC::full({2,3},8., INNC::f64);
+  ASSERT_STRICT_APPROX(a.log(), INNC::full({2,3}, log(8), INNC::f64));
+  a = std::double_t(4);
+  ASSERT_EQ(a.log().to_string(), std::to_string(log(4)));
 }
 
 TEST(arithmetic, max) {

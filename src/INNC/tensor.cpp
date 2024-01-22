@@ -122,6 +122,8 @@ Tensor Tensor::max() const { return Tensor(fptr->max()); }
 
 Tensor Tensor::min() const { return Tensor(fptr->min()); }
 
+Tensor Tensor::log() const { return Tensor(fptr->log()); }
+
 void Tensor::zero_grad() const noexcept { fptr->zero_grad(); }
 
 Tensor Tensor::operator[](const std::string &slice) {

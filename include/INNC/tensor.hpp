@@ -99,6 +99,7 @@ public:
   Tensor abs() const;
   Tensor max() const;
   Tensor min() const;
+  Tensor log() const;
   void zero_grad() const noexcept;
   bool is_contiguous() const noexcept;
   Tensor contiguous() const;
