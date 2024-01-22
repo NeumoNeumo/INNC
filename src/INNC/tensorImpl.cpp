@@ -241,6 +241,17 @@ std::shared_ptr<TensorImpl> TensorImpl::full(const SizeVec &sizes, double num,
   return ret;
 }
 
+std::shared_ptr<TensorImpl> TensorImpl::eye(size_t n, types dtype) {
+  return TensorImpl::eye(n, n, dtype);
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::eye(size_t n, size_t m, types dtype) {
+  auto ret = create(dtype, StridedLayout{SizeVec{n, m}});
+  ret->data_->zero_();
+  native::tensor_eye_helper::dispatch(dtype, dtype)(ret.get(), nullptr);
+  return ret;
+}
+
 std::shared_ptr<TensorImpl>
 TensorImpl::from_blob(void *data, const SizeVec &sizes, types dtype) {
   auto ret = create(dtype, StridedLayout{sizes});

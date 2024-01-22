@@ -59,6 +59,9 @@ public:
                                           types dtype);
   static std::shared_ptr<TensorImpl> full(const SizeVec &sv, double num,
                                           types dtype);
+  static std::shared_ptr<TensorImpl> eye(size_t n, types dtype = types::i8);
+  static std::shared_ptr<TensorImpl> eye(size_t n, size_t m,
+                                         types dtype = types::i8);
   static std::shared_ptr<TensorImpl> from_blob(void *data, const SizeVec &sizes,
                                                types dtype);
   static std::shared_ptr<TensorImpl> randn(const SizeVec &sizes, types dtype);

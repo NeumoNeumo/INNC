@@ -76,6 +76,15 @@ void tensor_fill(TensorImpl *tdata, const TensorImpl *ndata) {
   }
 }
 
+template <typename TensorType, typename NumberType>
+void tensor_eye(TensorImpl *tdata, const TensorImpl *ndata) {
+  auto t_ptr = reinterpret_cast<TensorType *>(tdata->data_->get_blob());
+  auto m_dim = std::min(tdata->size(0), tdata->size(1));
+  for (size_t i = 0; i < m_dim; ++i) {
+    *(t_ptr + tdata->cnt_from_index(SizeVec({i, i}))) = 1;
+  }
+}
+
 template <typename ToType, typename FromType>
 void tensor_to_type(TensorImpl *to, const TensorImpl *from) {
   ToType *to_ptr = reinterpret_cast<ToType *>(to->data_->get_blob());
@@ -369,6 +378,7 @@ generate_binary_op_helper(tensor_ge);
 generate_binary_op_helper(tensor_eq);
 generate_binary_op_helper(tensor_ne);
 generate_unary_op_helper(tensor_fill);
+generate_unary_op_helper(tensor_eye);
 generate_unary_op_helper(tensor_to_type);
 generate_unary_op_helper(tensor_sum);
 generate_unary_op_helper(tensor_clone);
