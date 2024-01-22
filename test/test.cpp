@@ -16,9 +16,10 @@ INNC::types all_type[6] = {INNC::i8,  INNC::i16, INNC::i32,
 constexpr double epsilon = 1e-6;
 
 #define ASSERT_STRICT_APPROX(lhs, rhs)                                         \
-  static_assert(std::is_same_v<decltype(lhs), INNC::Tensor> &&                 \
-                    std::is_same_v<decltype(rhs), INNC::Tensor>,               \
-                "This macro only compares between `Tensor`s");                 \
+  static_assert(                                                               \
+      std::is_same_v<std::remove_cvref_t<decltype(lhs)>, INNC::Tensor> &&      \
+          std::is_same_v<std::remove_cvref_t<decltype(rhs)>, INNC::Tensor>,    \
+      "This macro only compares between `Tensor`s");                           \
   ASSERT_EQ((lhs).size(), (rhs).size());                                       \
   ASSERT_EQ((lhs).type(), (rhs).type());                                       \
   ASSERT_TRUE((((lhs) - (rhs)).abs() < epsilon).all());
@@ -61,10 +62,23 @@ TEST(basic, initialization) {
   ASSERT_EQ(b.to_string(), std::to_string(double(1)));
   a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
   ASSERT_EQ(a.to_string(), output_i8_1);
-  std::int8_t data_1[3][3] = {{1, 0, 0}, {0,1,0}, {0,0,1}};
-  ASSERT_STRICT_APPROX(INNC::Tensor::eye(3), INNC::from_blob(data_1, {3, 3}, INNC::i8));
-  std::int8_t data_2[2][3] = {{1, 0, 0}, {0,1,0}};
-  ASSERT_STRICT_APPROX(INNC::Tensor::eye(2, 3), INNC::from_blob(data_2, {2, 3}, INNC::i8));
+  a = INNC::full({2, 3, 3}, -1l, INNC::i32);
+  ASSERT_STRICT_APPROX(a.sum(), INNC::Tensor(-18l));
+  a = INNC::full({1}, -2.0, INNC::f64);
+  ASSERT_STRICT_APPROX(a.sum(), INNC::Tensor(-2.0));
+  a = INNC::full({0}, -2.0, INNC::f64);
+  ASSERT_EQ(a.size().to_string(), "[0]");
+  ASSERT_EQ(a.to_string(), "[]");
+  ASSERT_EQ(INNC::Tensor::eye(0).to_string(), "[]");
+  std::int8_t data_1[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+  ASSERT_STRICT_APPROX(INNC::Tensor::eye(3),
+                       INNC::from_blob(data_1, {3, 3}, INNC::i8));
+  std::int8_t data_2[2][3] = {{1, 0, 0}, {0, 1, 0}};
+  ASSERT_STRICT_APPROX(INNC::Tensor::eye(2, 3),
+                       INNC::from_blob(data_2, {2, 3}, INNC::i8));
+  ASSERT_STRICT_APPROX(
+      INNC::Tensor::eye(2, 3, INNC::f32),
+      INNC::from_blob(data_2, {2, 3}, INNC::i8).type(INNC::f32));
 }
 
 TEST(basic, type) {
@@ -315,6 +329,43 @@ TEST(index, reshape) {
   a = INNC::ones({1}, INNC::i8);
   b = INNC::reshape(a, {});
   ASSERT_EQ(b.to_string(), "1");
+}
+
+TEST(index, cat) {
+  auto a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
+  std::vector<INNC::Tensor> input;
+  input.resize(3);
+  input[0] = a;
+  input[1] = a;
+  input[2] = a;
+  ASSERT_THROW(INNC::cat(input, 2), std::runtime_error);
+  auto b = INNC::cat(input);
+  std::int8_t rst_d0[12][3] = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11},
+                               {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11},
+                               {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11}};
+  auto rst = INNC::from_blob(rst_d0, {12, 3}, INNC::i8).type(INNC::i16);
+  ASSERT_STRICT_APPROX(b, rst);
+  b = INNC::cat(input, 1);
+  std::int8_t rst_d1[4][9] = {{0, 1, 2, 0, 1, 2, 0, 1, 2},
+                              {3, 4, 5, 3, 4, 5, 3, 4, 5},
+                              {6, 7, 8, 6, 7, 8, 6, 7, 8},
+                              {9, 10, 11, 9, 10, 11, 9, 10, 11}};
+  rst = INNC::from_blob(rst_d1, {4, 9}, INNC::i8).type(INNC::i16);
+  ASSERT_STRICT_APPROX(b, rst);
+  input.resize(2);
+  input[0] = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16);
+  input[1] =
+      INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::types::f32);
+  auto c = INNC::cat(input);
+  std::int8_t rst_d2[6][3] = {{0, 1, 2},   {3, 4, 5},  {6, 7, 8},
+                              {9, 10, 11}, {0, -2, 4}, {6, 8, -10}};
+  rst = INNC::from_blob(rst_d2, {6, 3}, INNC::i8).type(INNC::f32);
+  ASSERT_STRICT_APPROX(c, rst);
+  input[0] = INNC::from_blob(data_i16_2, {3, 4}, INNC::i16);
+  input[1] = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16);
+  ASSERT_THROW(INNC::cat(input), std::runtime_error);
+  input.resize(1);
+  ASSERT_STRICT_APPROX(INNC::cat(input), input[0]);
 }
 
 TEST(autograd, add) {
@@ -580,6 +631,26 @@ TEST(autograd, type) {
   c = c * b;
   c.sum().backward();
   ASSERT_EQ(a.grad().to_string(), b.to_string());
+}
+
+TEST(autograd, cat) {
+  auto a = INNC::from_blob(data_i16_2, {4, 3}, INNC::i16).type(INNC::f32);
+  auto b = INNC::from_blob(data_i16_1, {2, 3}, INNC::i16).type(INNC::f64);
+  std::vector<INNC::Tensor> input;
+  a.requires_grad(true);
+  b.requires_grad(true);
+  input.resize(3);
+  input[0] = a;
+  input[1] = b;
+  input[2] = a;
+  auto c = INNC::Tensor::cat(input);
+  c.retain_grad(true);
+  c.sum().backward();
+  auto rst = INNC::ones({10, 3}, INNC::f64);
+  ASSERT_EQ(c.grad().to_string(), rst.to_string());
+  rst = INNC::ones({4, 3}, INNC::f32) * 2;
+  ASSERT_STRICT_APPROX(a.grad(), rst);
+  ASSERT_STRICT_APPROX(b.grad(), INNC::ones({2, 3}, INNC::f64));
 }
 
 TEST(autograd, max) {

@@ -67,6 +67,8 @@ public:
   static Tensor ones(const SizeVec &size, types t);
   static Tensor zeros_like(const Tensor &t);
   static Tensor ones_like(const Tensor &t);
+  static Tensor full(const SizeVec &size, std::int64_t num, types dtype);
+  static Tensor full(const SizeVec &size, double num, types dtype);
   static Tensor eye(size_t n, types dtype = types::i8);
   static Tensor eye(size_t n, size_t m, types dtype = types::i8);
   static Tensor from_blob(void *data, const SizeVec &sizes, types dtype);
@@ -82,6 +84,8 @@ public:
   static Tensor reshape(const Tensor &input, const SignedVec &sizes);
   Tensor reshape(const SignedVec &sizes);
   Tensor reshape_as(const Tensor &input);
+  static Tensor cat(const std::vector<Tensor> &input_tensors,
+                    const size_t dim = 0);
   Tensor &operator+=(const Tensor &rhs);
   bool requires_grad() const noexcept;
   void requires_grad(bool b);

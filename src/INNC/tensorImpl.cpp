@@ -45,6 +45,16 @@ size_t TensorImpl::cnt_from_index(const SizeVec &index) const {
 
 SizeVec TensorImpl::size() const { return view->sizes; }
 
+size_t TensorImpl::size(int d) const {
+  int range = dim();
+  run_expect(d >= -range && d < range,
+             " Dimension out of range (expected to be in range of [", -range,
+             ", ", range - 1, "], but got ", d, ")");
+  if (d < 0)
+    d += range;
+  return view->sizes[d];
+}
+
 SignedVec TensorImpl::stride() const {
   if (typeid(view) == typeid(std::shared_ptr<StridedLayout>)) {
     return dynamic_cast<StridedLayout *>(view.get())->strides;
@@ -215,19 +225,31 @@ std::shared_ptr<TensorImpl> TensorImpl::ones_like(const TensorImpl &t) {
   return TensorImpl::ones(t.view->sizes, t.dtype);
 }
 
-std::shared_ptr<TensorImpl> TensorImpl::eye(size_t n, types dtype){
+std::shared_ptr<TensorImpl> TensorImpl::full(const SizeVec &sizes,
+                                             std::int64_t num, types dtype) {
+  auto tmp = create(num);
+  auto ret = create(dtype, make_shared<StridedLayout>(sizes));
+  native::tensor_fill_helper::dispatch(dtype, i64)(ret.get(), tmp.get());
+  return ret;
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::full(const SizeVec &sizes, double num,
+                                             types dtype) {
+  auto tmp = create(num);
+  auto ret = create(dtype, make_shared<StridedLayout>(sizes));
+  native::tensor_fill_helper::dispatch(dtype, f64)(ret.get(), tmp.get());
+  return ret;
+}
+
+std::shared_ptr<TensorImpl> TensorImpl::eye(size_t n, types dtype) {
   return TensorImpl::eye(n, n, dtype);
 }
 
-std::shared_ptr<TensorImpl> TensorImpl::eye(size_t n, size_t m, types dtype){
-  auto ret = create(types::i8, StridedLayout{SizeVec{n ,m}});
+std::shared_ptr<TensorImpl> TensorImpl::eye(size_t n, size_t m, types dtype) {
+  auto ret = create(dtype, StridedLayout{SizeVec{n, m}});
   ret->data_->zero_();
-  auto ret_ptr = reinterpret_cast<std::int8_t *>(ret->data_->get_blob());
-  for (size_t i = 0;( i < n) & (i < m); i++){
-    *(ret_ptr + ret->cnt_from_index(SizeVec({i,i}))) = 1;
-  }
-  if (dtype != types::i8) return ret->type(dtype);
-  else return ret;
+  native::tensor_eye_helper::dispatch(dtype, dtype)(ret.get(), nullptr);
+  return ret;
 }
 
 std::shared_ptr<TensorImpl>
@@ -765,4 +787,54 @@ std::shared_ptr<TensorImpl> TensorImpl::randn(const SizeVec &sizes,
 std::shared_ptr<TensorImpl> TensorImpl::randn_like(const TensorImpl &t) {
   return randn(t.size(), t.dtype);
 }
+
+std::shared_ptr<TensorImpl>
+TensorImpl::cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_ts,
+                const size_t dim) {
+  run_expect(dim >= 0 && dim < input_ts[0]->dim(),
+             "you give out a illegal dim");
+  for (size_t i = 1; i < input_ts.size(); i++) {
+    run_expect(input_ts[0]->dim() == input_ts[i]->dim(),
+               "You can't cat two vectors with different dimension.");
+    for (size_t j = 0; j < input_ts[0]->dim(); j++) {
+      if (j == dim)
+        continue;
+      run_expect(input_ts[0]->size(j) == input_ts[i]->size(j),
+                 "You can't cat two vectors with different size except for a "
+                 "given dimension.");
+    }
+  }
+
+  SizeVec sizes = input_ts[0]->size();
+  sizes[dim] = 0;
+  for (size_t j = 0; j < input_ts.size(); j++)
+    sizes[dim] += input_ts[j]->size(dim);
+  types dtype = input_ts[0]->dtype;
+  for (const auto &t : input_ts)
+    dtype = larger_type(dtype, t->dtype);
+  std::shared_ptr<TensorImpl> ret = create(dtype, StridedLayout{sizes});
+
+  size_t s_offset = 0;
+  for (const auto &t : input_ts) {
+    native::tensor_cat_helper::dispatch(dtype, t->dtype)(
+        ret.get(), t.get(),
+        s_offset *
+            dynamic_cast<StridedLayout *>(ret->view.get())->strides[dim]);
+    s_offset += t->size(dim);
+  }
+
+  bool requires_grad = false;
+  for (const auto &t : input_ts)
+    if (t->requires_grad) {
+      requires_grad = true;
+      break;
+    }
+  if (!requires_grad)
+    return ret;
+  // autograd
+  ret->requires_grad = true;
+  ret->grad_fn.reset(new CatBack(ret.get(), input_ts, dim));
+  return ret;
+}
+
 } // namespace INNC

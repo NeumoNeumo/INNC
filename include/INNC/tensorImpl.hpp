@@ -55,8 +55,13 @@ public:
   static std::shared_ptr<TensorImpl> ones(const SizeVec &sizes, types dtype);
   static std::shared_ptr<TensorImpl> zeros_like(const TensorImpl &t);
   static std::shared_ptr<TensorImpl> ones_like(const TensorImpl &t);
+  static std::shared_ptr<TensorImpl> full(const SizeVec &sv, std::int64_t num,
+                                          types dtype);
+  static std::shared_ptr<TensorImpl> full(const SizeVec &sv, double num,
+                                          types dtype);
   static std::shared_ptr<TensorImpl> eye(size_t n, types dtype = types::i8);
-  static std::shared_ptr<TensorImpl> eye(size_t n, size_t m, types dtype = types::i8);
+  static std::shared_ptr<TensorImpl> eye(size_t n, size_t m,
+                                         types dtype = types::i8);
   static std::shared_ptr<TensorImpl> from_blob(void *data, const SizeVec &sizes,
                                                types dtype);
   static std::shared_ptr<TensorImpl> randn(const SizeVec &sizes, types dtype);
@@ -67,6 +72,7 @@ public:
   std::shared_ptr<TensorImpl> type(types t);
   SignedVec stride() const;
   SizeVec size() const;
+  size_t size(int d) const;
   std::shared_ptr<TensorImpl> operator[](const std::string &slice);
   static std::shared_ptr<TensorImpl>
   transpose(const std::shared_ptr<TensorImpl> &input, size_t dim0, size_t dim1);
@@ -77,6 +83,9 @@ public:
   reshape(const std::shared_ptr<TensorImpl> &input, const SignedVec &sizes);
   std::shared_ptr<TensorImpl> reshape(const SignedVec &sizes);
   std::shared_ptr<TensorImpl> reshape_as(const TensorImpl &sizes);
+  static std::shared_ptr<TensorImpl>
+  cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_ts,
+      const size_t dim);
   std::shared_ptr<TensorImpl> sum();
   std::shared_ptr<TensorImpl> abs();
   std::shared_ptr<TensorImpl> max();

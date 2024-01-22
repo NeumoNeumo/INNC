@@ -98,6 +98,28 @@ void CloneBack::step_back() {
   try_accumulate_grad(input_tfs[0].get(), &get_out_grad());
 }
 
+CatBack::CatBack(
+    TensorImpl *this_tf,
+    const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,
+    const size_t dim)
+    : Backward(this_tf, input_tfs), dim(dim) {}
+
+void CatBack::step_back() {
+  size_t s = 0;
+  for (const auto &t : input_tfs) {
+    auto ret = INNC::TensorImpl::create(
+        this_tf->dtype,
+        std::make_unique<StridedLayout>(
+            t->view->sizes,
+            dynamic_cast<StridedLayout *>(this_tf->view.get())->strides,
+            s * dynamic_cast<StridedLayout *>(this_tf->view.get())
+                    ->strides[dim]),
+        this_tf->grad->data_);
+    try_accumulate_grad(t.get(), ret.get());
+    s += t->view->sizes[dim];
+  }
+}
+
 KnownGradBack::KnownGradBack(
     TensorImpl *this_tf,
     const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_tfs,

@@ -52,10 +52,10 @@ Tensor Tensor::ones_like(const Tensor &t) {
   return Tensor(TensorImpl::ones_like(*t.fptr));
 }
 
-Tensor Tensor::eye(size_t n, types dtype){
-  return Tensor(TensorImpl::eye(n,dtype));
+Tensor Tensor::eye(size_t n, types dtype) {
+  return Tensor(TensorImpl::eye(n, dtype));
 }
-Tensor Tensor::eye(size_t n, size_t m, types dtype){
+Tensor Tensor::eye(size_t n, size_t m, types dtype) {
   return Tensor(TensorImpl::eye(n, m, dtype));
 }
 
@@ -189,6 +189,21 @@ Tensor Tensor::randn(const SizeVec &sizes, types dtype) {
 
 Tensor Tensor::randn_like(const Tensor &t) {
   return Tensor(TensorImpl::randn_like(*t.fptr));
+}
+
+Tensor Tensor::cat(const std::vector<Tensor> &input_tensors, const size_t dim) {
+  std::vector<std::shared_ptr<INNC::TensorImpl>> input_tfs_;
+  for (const auto &t : input_tensors)
+    input_tfs_.emplace_back(t.fptr);
+  return Tensor(TensorImpl::cat(input_tfs_, dim));
+}
+
+Tensor Tensor::full(const SizeVec &sv, std::int64_t num, types dtype) {
+  return Tensor(TensorImpl::full(sv, num, dtype));
+}
+
+Tensor Tensor::full(const SizeVec &sv, double num, types dtype) {
+  return Tensor(TensorImpl::full(sv, num, dtype));
 }
 
 } // namespace INNC
