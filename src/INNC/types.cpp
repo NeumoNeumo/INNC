@@ -6,8 +6,6 @@
 
 namespace INNC {
 
-std::string to_string(types t) { return type_to_string_aux_arr[t]; }
-
 std::string innc_type_to_string(NumericType auto num, types t) {
   switch (t) {
   case i8:
