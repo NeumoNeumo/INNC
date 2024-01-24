@@ -22,3 +22,9 @@ uint8_t *UntypedStorage::get_blob() const noexcept { return blob.get(); }
 void UntypedStorage::release() noexcept { blob.reset(); }
 
 bool UntypedStorage::is_alloc() const noexcept { return blob.get() != nullptr; }
+
+void UntypedStorage::reset_blob(uint8_t ptr[]) { blob.reset(ptr); }
+
+void UntypedStorage::reset_blob(std::unique_ptr<uint8_t[]> &&ptr) {
+  blob = std::move(ptr);
+}

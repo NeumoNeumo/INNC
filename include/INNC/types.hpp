@@ -1,7 +1,7 @@
 #pragma once
 #ifdef _MSC_VER
 #error Static reflection is only tested under clang and gcc because \
-I don't use MSVC. However, any PR is welcomed.
+I am not familiar with MSVC. However, any PR is welcomed.
 #endif
 
 static_assert(
@@ -55,9 +55,7 @@ template <size_t... idx> consteval auto size_of_h(std::index_sequence<idx...>) {
 
 constexpr auto size_of_d = size_of_h(std::make_index_sequence<Count>());
 
-inline constexpr auto size_of(types t) {
-  return size_of_d[t];
-}
+inline constexpr auto size_of(types t) { return size_of_d[t]; }
 
 template <types t> consteval auto get_typename() {
   std::string_view sig = __PRETTY_FUNCTION__;
@@ -83,8 +81,7 @@ template <types t> consteval auto get_typename_zt() {
   return static_string<sig.size()>{sig};
 }
 
-template<types t>
-constexpr auto get_typename_zt_v = get_typename_zt<t>();
+template <types t> constexpr auto get_typename_zt_v = get_typename_zt<t>();
 
 template <size_t... IdxSeq>
 consteval auto get_types_str(std::index_sequence<IdxSeq...>) {
@@ -94,9 +91,7 @@ consteval auto get_types_str(std::index_sequence<IdxSeq...>) {
 
 constexpr auto types_str = get_types_str(std::make_index_sequence<Count>());
 
-inline constexpr auto to_string(types t) {
-  return types_str[t];
-}
+inline constexpr auto to_string(types t) { return types_str[t]; }
 
 template <typename T, size_t...> struct is_any_itype_s;
 

@@ -81,7 +81,7 @@ void tensor_eye(TensorImpl *tdata, const TensorImpl *ndata) {
   auto t_ptr = reinterpret_cast<TensorType *>(tdata->data_->get_blob());
   auto m_dim = std::min(tdata->size(0), tdata->size(1));
   for (size_t i = 0; i < m_dim; ++i) {
-    *(t_ptr + tdata->cnt_from_index(SizeVec({i, i}))) = 1;
+    *(t_ptr + tdata->cnt_from_index(SizeVec{i, i})) = 1;
   }
 }
 

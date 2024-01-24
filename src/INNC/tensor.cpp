@@ -17,9 +17,14 @@ Tensor::Tensor(std::int32_t a) : Tensor(TensorImpl::create(a)) {}
 Tensor::Tensor(std::int64_t a) : Tensor(TensorImpl::create(a)) {}
 Tensor::Tensor(float a) : Tensor(TensorImpl::create(a)) {}
 Tensor::Tensor(double a) : Tensor(TensorImpl::create(a)) {}
+Tensor::Tensor(TensorInit init) : fptr{init.createImpl()} {}
 
 Tensor &Tensor::operator=(const Tensor &t) = default;
 Tensor &Tensor::operator=(Tensor &&t) = default;
+Tensor &Tensor::operator=(TensorInit init) {
+  fptr = init.createImpl();
+  return *this;
+}
 Tensor::Tensor(const SizeVec &sizes, types dtype)
     : fptr(TensorImpl::create(dtype, StridedLayout{sizes})){};
 Tensor::~Tensor() = default;
@@ -204,6 +209,14 @@ Tensor Tensor::full(const SizeVec &sv, std::int64_t num, types dtype) {
 
 Tensor Tensor::full(const SizeVec &sv, double num, types dtype) {
   return Tensor(TensorImpl::full(sv, num, dtype));
+}
+
+std::shared_ptr<TensorImpl> TensorInit::createImpl() {
+  if (shape.empty())
+    return nullptr;
+  auto ret = TensorImpl::create(dtype, StridedLayout{shape}, false);
+  ret->data_->reset_blob(std::move(data_ptr));
+  return ret;
 }
 
 } // namespace INNC

@@ -81,6 +81,22 @@ TEST(basic, initialization) {
       INNC::from_blob(data_2, {2, 3}, INNC::i8).type(INNC::f32));
 }
 
+TEST(basic, smartInit) {
+  INNC::Tensor a =
+      INNC::TensorInit{std::int32_t(1), std::int32_t(2), std::int32_t(3)};
+  ASSERT_EQ(a.type(), INNC::i32);
+  ASSERT_EQ(a.to_string(), "[1, 2, 3]");
+  a = INNC::TensorInit{};
+  ASSERT_EQ(a.to_string(), "[]");
+  a = INNC::TensorInit{{{1, 2}, {3, 4}, {5, 5}}};
+  ASSERT_EQ(a.size().to_string(), "[1, 3, 2]");
+  a = INNC::TensorInit{{1}, {2}, {3}};
+  ASSERT_EQ(a.size().to_string(), "[3, 1]");
+  ASSERT_THROW((INNC::TensorInit{{1, 2, 3}, {4, 5}}), std::invalid_argument);
+  ASSERT_THROW((INNC::TensorInit{{1., 2., 3.}, {4, 5, 6}}),
+               std::invalid_argument);
+}
+
 TEST(basic, type) {
   auto a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
   auto b = a.type(INNC::i64);
