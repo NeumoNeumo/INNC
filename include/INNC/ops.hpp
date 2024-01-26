@@ -137,8 +137,8 @@ void tensor_mean(TensorImpl *to, const TensorImpl *from) {
     while (true) {
       size_t ptr = last_idx;
       while (sv[ptr] == data_sizes[ptr]) {
-        if (ptr == 0){
-        *to_ptr = *(to_ptr) / n;
+        if (ptr == 0) {
+          *to_ptr = *(to_ptr) / n;
           return;
         }
         sv[ptr] = 0;
