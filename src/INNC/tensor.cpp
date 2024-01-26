@@ -121,6 +121,8 @@ Tensor Tensor::grad() const noexcept {
 
 Tensor Tensor::sum() const { return Tensor(fptr->sum()); }
 
+Tensor Tensor::mean() const { return Tensor(fptr->mean()); }
+
 Tensor Tensor::abs() const { return Tensor(fptr->abs()); }
 
 Tensor Tensor::max() const { return Tensor(fptr->max()); }

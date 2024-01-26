@@ -376,6 +376,21 @@ std::shared_ptr<TensorImpl> TensorImpl::sum() {
   return tf;
 }
 
+std::shared_ptr<TensorImpl> TensorImpl::mean() {
+  INNC::types dst_t;
+  if (dtype <= i64)
+    dst_t = i64;
+  else
+    dst_t = f64;
+  auto tf = zeros(SizeVec{}, dst_t);
+  native::tensor_mean_helper::dispatch(dst_t, dtype)(tf.get(), this);
+  if (requires_grad) {
+    tf->requires_grad = true;
+    tf->grad_fn.reset(new MeanBack(tf.get(), {shared_from_this()}));
+  }
+  return tf;
+}
+
 std::shared_ptr<TensorImpl> TensorImpl::abs() {
   auto ret = create(dtype, view);
   if (!requires_grad) {

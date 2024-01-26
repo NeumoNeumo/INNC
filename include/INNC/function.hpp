@@ -56,6 +56,12 @@ public:
   void step_back() override;
 };
 
+class MeanBack : public Backward {
+public:
+  using Backward::Backward;
+  void step_back() override;
+};
+
 class NoBack : public Backward {
 public:
   using Backward::Backward;

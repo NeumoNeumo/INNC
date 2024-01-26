@@ -237,6 +237,17 @@ TEST(arithmetic, sum) {
   ASSERT_EQ(a.sum().to_string(), std::to_string(std::int16_t(1)));
 }
 
+TEST(arithmetic, mean) {
+  auto a = INNC::full({2, 3, 3}, -1l, INNC::i32);
+  ASSERT_STRICT_APPROX(a.mean(), INNC::Tensor(-1l).type(INNC::i64));
+  a = INNC::from_blob(data_i16_2, {2, 2, 3}, INNC::i16).type(INNC::f32);
+  ASSERT_STRICT_APPROX(a.mean(), INNC::Tensor(5.5).type(INNC::f64));
+  a = std::int16_t(3);
+  ASSERT_EQ(a.mean().to_string(), std::to_string(std::int16_t(3)));
+  a = INNC::ones({1}, INNC::i16);
+  ASSERT_EQ(a.mean().to_string(), std::to_string(std::int16_t(1)));
+}
+
 TEST(arithmetic, max) {
   auto a = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8);
   ASSERT_EQ(a.max().to_string(), std::to_string(std::int8_t(11)));
@@ -422,6 +433,18 @@ TEST(autograd, add) {
   ASSERT_EQ(b.grad().to_string(), INNC::Tensor(double(4)).to_string());
   a.zero_grad();
   ASSERT_EQ(a.grad().to_string(), INNC::Tensor(float(0)).to_string());
+}
+
+TEST(autograd, sum) {
+  auto a = INNC::ones({2, 3}, INNC::f64);
+  auto b = INNC::from_blob(data_i8_1, {2, 3}, INNC::i8).type(INNC::f32);
+  a.requires_grad(true);
+  b.requires_grad(true);
+  a.retain_grad(true);
+  b.retain_grad(true);
+  auto c = a.sum() * b.sum();
+  c.backward();
+  ASSERT_STRICT_APPROX(a.grad(), INNC::ones({2, 3}, INNC::f64) * b.sum());
 }
 
 TEST(autograd, substract) {

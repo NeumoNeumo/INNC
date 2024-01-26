@@ -87,6 +87,7 @@ public:
   cat(const std::vector<std::shared_ptr<INNC::TensorImpl>> &input_ts,
       const size_t dim);
   std::shared_ptr<TensorImpl> sum();
+  std::shared_ptr<TensorImpl> mean();
   std::shared_ptr<TensorImpl> abs();
   std::shared_ptr<TensorImpl> max();
   std::shared_ptr<TensorImpl> min();
