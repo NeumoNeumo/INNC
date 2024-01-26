@@ -516,7 +516,7 @@ TEST(arithmetic,einsum){
   ASSERT_EQ((INNC::Tensor::einsum("ij->ji", a)).to_string(), "[[1,1],[1,1]]");
   ASSERT_EQ((INNC::Tensor::einsum("ij->j", a)).to_string(), "[2,2]");
   ASSERT_EQ((INNC::Tensor::einsum("ik,l->i", a,c)).to_string(), "[2,2]");
-  ASSERT_EQ((INNC::Tensor::einsum("ik,kj->ij", a)).to_string(), "[[2,2],[2,2]]");
+  ASSERT_EQ((INNC::Tensor::einsum("ik,kj->ij", a, b)).to_string(), "[[2,2],[2,2]]");
   ASSERT_EQ((INNC::Tensor::einsum("i,i->", c,d)).to_string(), "[2]");
   ASSERT_EQ((INNC::Tensor::einsum("i,j->ij", c,d)).to_string(), "[[1,1],[1,1]]");
   ASSERT_EQ((INNC::Tensor::einsum("ijk,ikl->pstuv", f,g)).to_string(), "[[[2,2],[2,2]],[[2,2],[2,2]]]");
