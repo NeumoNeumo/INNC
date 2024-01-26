@@ -108,6 +108,7 @@ public:
   bool all() const;
   Tensor operator-();
   Tensor operator+();
+  static Tensor einsum(const std::string &equation, std::initializer_list<Tensor> tensors) ;
   friend Tensor operator+(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator-(const Tensor &lhs, const Tensor &rhs);
   friend Tensor operator*(const Tensor &lhs, const Tensor &rhs);
