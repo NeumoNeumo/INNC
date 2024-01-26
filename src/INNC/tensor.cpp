@@ -58,6 +58,14 @@ Tensor Tensor::eye(size_t n, types dtype) {
 Tensor Tensor::eye(size_t n, size_t m, types dtype) {
   return Tensor(TensorImpl::eye(n, m, dtype));
 }
+Tensor Tensor::einsum(const std::string &equation, std::initializer_list<Tensor> tensors) {
+    std::vector<std::shared_ptr<TensorImpl>> tensorImpls;
+    for (const auto &tensor : tensors) {
+      tensorImpls.push_back(tensor.fptr); 
+    }
+    auto resultImpl = TensorImpl::einsum(equation, tensorImpls); 
+    return Tensor(resultImpl); 
+  }
 
 Tensor Tensor::from_blob(void *data, const SizeVec &sizes, types dtype) {
   return Tensor(TensorImpl::from_blob(data, sizes, dtype));
