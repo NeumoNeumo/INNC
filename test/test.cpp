@@ -499,6 +499,31 @@ TEST(autograd, divide) {
   ASSERT_STRICT_APPROX(a.grad(), INNC::zeros_like(a));
 }
 
+TEST(arithmetic,einsum){
+  auto a = INNC::ones( {2, 2}, INNC::f64);
+  auto b = INNC::ones( {2, 2}, INNC::f64);
+  auto c = INNC::ones( {2}, INNC::f64);
+  auto d = INNC::ones( {2},INNC::f64);
+  auto e = INNC::ones({1}, INNC::f64);
+  auto f = INNC::ones( {2, 2,2}, INNC::f64);
+  auto g = INNC::ones( {2, 2,2}, INNC::f64);
+  auto h = INNC::ones( {2, 2,2,2}, INNC::f64);
+  auto i = INNC::ones( {2, 2,2,2,2}, INNC::f64);
+  ASSERT_EQ((INNC::Tensor::einsum("ii->i", a)).to_string(), "[1,1]");
+  ASSERT_EQ((INNC::Tensor::einsum("ij->ji", a)).to_string(), "[[1,1],[1,1]]");
+  ASSERT_EQ((INNC::Tensor::einsum("...ij->...ji", a)).to_string(), "[[1,1],[1,1]]");
+  ASSERT_EQ((INNC::Tensor::einsum("ij->", a)).to_string(), "[4]");
+  ASSERT_EQ((INNC::Tensor::einsum("ij->ji", a)).to_string(), "[[1,1],[1,1]]");
+  ASSERT_EQ((INNC::Tensor::einsum("ij->j", a)).to_string(), "[2,2]");
+  ASSERT_EQ((INNC::Tensor::einsum("ik,l->i", a,c)).to_string(), "[2,2]");
+  ASSERT_EQ((INNC::Tensor::einsum("ik,kj->ij", a)).to_string(), "[[2,2],[2,2]]");
+  ASSERT_EQ((INNC::Tensor::einsum("i,i->", c,d)).to_string(), "[2]");
+  ASSERT_EQ((INNC::Tensor::einsum("i,j->ij", c,d)).to_string(), "[[1,1],[1,1]]");
+  ASSERT_EQ((INNC::Tensor::einsum("ijk,ikl->pstuv", f,g)).to_string(), "[[[2,2],[2,2]],[[2,2],[2,2]]]");
+  ASSERT_EQ((INNC::Tensor::einsum("pqrs,tuqvr->pstuv", h,i)).to_string(), 16*i);
+  ASSERT_EQ((INNC::Tensor::einsum("ik,jkl->ij", a,f)).to_string(), [[8,8],[8,8]]);
+}
+
 TEST(autograd, slice) {
   // [[0, 1, 2],
   //  [3, 4, 5],
